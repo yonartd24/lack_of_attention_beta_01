@@ -1,167 +1,302 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Mobile - Brain Drain</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <style>
-        body, html { margin: 0; padding: 0; height: 100%; width: 100%; font-family: 'Helvetica Neue', Arial, sans-serif; overflow: hidden; background-color: #1a1a1a; color: white; -webkit-touch-callout: none; -webkit-user-select: none; }
-        
-        .screen { display: none; height: 100vh; width: 100vw; justify-content: center; align-items: center; flex-direction: column; text-align: center; padding: 20px; box-sizing: border-box; }
-        .active { display: flex; }
-
-        .btn { background: white; color: black; border: none; padding: 15px 40px; font-size: 1.5rem; font-weight: bold; border-radius: 30px; margin-top: 20px; cursor: pointer; }
-        .btn:active { opacity: 0.7; transform: scale(0.95); }
-
-        /* Onboarding */
-        input[type="text"] { font-size: 1.5rem; padding: 15px; border-radius: 10px; border: none; width: 80%; text-align: center; margin-bottom: 20px; }
-        #error-msg { color: #FF3B30; display: none; margin-top: 10px; }
-        #status-msg { color: #aaa; margin-top: 20px; font-size: 0.9rem; }
-
-        /* Juego Simon */
-        #game-grid { display: none; height: 100vh; width: 100vw; flex-wrap: wrap; }
-        .color-btn { width: 50%; height: 50vh; border: none; position: relative; display: flex; justify-content: center; align-items: center; outline: none;}
-        .color-btn:active { opacity: 0.5; }
-        #btn-green { background-color: #34C759; order: 1; } #btn-red { background-color: #FF3B30; order: 2; } #btn-yellow { background-color: #FFCC00; order: 3; } #btn-blue { background-color: #007AFF; order: 4; }  
-
-        /* Bloqueo 10s */
-        .loader { border: 10px solid #333; border-top: 10px solid white; border-radius: 50%; width: 80px; height: 80px; animation: spin 1s linear infinite; margin-top: 30px; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-    </style>
-</head>
-<body>
-
-    <div id="screen-login" class="screen active">
-        <h2>ENTER NICKNAME</h2>
-        <input type="text" id="nickname-input" placeholder="Your name" maxlength="12">
-        <button class="btn" id="join-btn" onclick="joinGame()" style="opacity: 0.5; pointer-events: none;">Conectando...</button>
-        <p id="error-msg">Please keep it clean!</p>
-        <p id="status-msg">Esperando al servidor...</p>
-    </div>
-
-    <div id="screen-start" class="screen">
-        <h2>YOU'RE IN!</h2>
-        <p>Look at the TV.</p>
-        <button class="btn" style="background: #34C759; color: white; padding: 20px 60px;" onclick="startGame()">START</button>
-    </div>
-
-    <div id="screen-block" class="screen" style="background-color: #000; z-index: 200;">
-        <h1 id="block-title" style="color: #FF3B30;">LOOK AT THE TV</h1>
-        <p id="block-desc">Processing focus...</p>
-        <div class="loader" id="block-loader"></div>
-    </div>
-
-    <div id="game-grid">
-        <button class="color-btn" id="btn-green" onclick="sendTap('#34C759')"></button>
-        <button class="color-btn" id="btn-red" onclick="sendTap('#FF3B30')"></button>
-        <button class="color-btn" id="btn-yellow" onclick="sendTap('#FFCC00')"></button>
-        <button class="color-btn" id="btn-blue" onclick="sendTap('#007AFF')"></button>
-    </div>
-
-    <div id="screen-gameover" class="screen">
-        <h1 style="margin-bottom: 40px;">GAME OVER</h1>
-        <button class="btn" style="width: 80%; background: #007AFF; color: white;" onclick="startGame()">TRY AGAIN</button>
-        <button class="btn" style="width: 80%; background: #333; color: white;" onclick="alert('Scoreboard database coming soon!')">SCOREBOARD</button>
-        <button class="btn" style="width: 80%; background: #FF3B30; color: white; margin-top: 40px;" onclick="exitGame()">EXIT</button>
-    </div>
-
-    <script>
-        const supabaseUrl = 'https://hpmmzyfxchqlazxkbrym.supabase.co';
-        const supabaseKey = 'sb_publishable_z7XELKJhbVvNwnB1iIJq9g_7-CvO-rb';
-        const clienteSupabase = window.supabase.createClient(supabaseUrl, supabaseKey);
-        
-        const channel = clienteSupabase.channel('simon-sync');
-        
-        const badWords = ['fuck', 'shit', 'bitch', 'ass', 'dick'];
-
-        function showScreen(id) {
-            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-            document.getElementById('game-grid').style.display = 'none';
-            
-            if(id === 'game-grid') {
-                document.getElementById(id).style.display = 'flex';
-            } else {
-                document.getElementById(id).classList.add('active');
-            }
-        }
-
-        function joinGame() {
-            const name = document.getElementById('nickname-input').value.trim().toLowerCase();
-            const errorMsg = document.getElementById('error-msg');
-            
-            if (name.length < 2) return;
-            
-            const isClean = !badWords.some(word => name.includes(word));
-            if (!isClean) {
-                errorMsg.style.display = 'block';
-                return;
+    <head>
+        <meta charset="UTF-8" />
+        <meta
+            name="viewport"
+            content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+        <title>Mobile - Brain Drain</title>
+        <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+        <style>
+            body,
+            html {
+                margin: 0;
+                padding: 0;
+                height: 100%;
+                width: 100%;
+                font-family: "Helvetica Neue", Arial, sans-serif;
+                overflow: hidden;
+                background-color: #1a1a1a;
+                color: white;
+                -webkit-touch-callout: none;
+                -webkit-user-select: none;
             }
 
-            errorMsg.style.display = 'none';
-            channel.send({ type: 'broadcast', event: 'mobile-action', payload: { action: 'JOIN', value: name.toUpperCase() }});
-            showScreen('screen-start');
-        }
+            .screen {
+                display: none;
+                height: 100vh;
+                width: 100vw;
+                justify-content: center;
+                align-items: center;
+                flex-direction: column;
+                text-align: center;
+                padding: 20px;
+                box-sizing: border-box;
+            }
+            .active {
+                display: flex;
+            }
 
-        function startGame() {
-            channel.send({ type: 'broadcast', event: 'mobile-action', payload: { action: 'START' }});
-        }
+            .btn {
+                background: white;
+                color: black;
+                border: none;
+                padding: 15px 40px;
+                font-size: 1.5rem;
+                font-weight: bold;
+                border-radius: 30px;
+                margin-top: 20px;
+                cursor: pointer;
+            }
+            .btn:active {
+                opacity: 0.7;
+                transform: scale(0.95);
+            }
 
-        function sendTap(hex) {
-            const btn = Object.values(document.querySelectorAll('.color-btn')).find(b => b.getAttribute('onclick').includes(hex));
-            btn.style.opacity = '0.2';
-            setTimeout(() => btn.style.opacity = '1', 150);
-            channel.send({ type: 'broadcast', event: 'mobile-action', payload: { action: 'TAP', value: hex }});
-        }
+            /* Onboarding */
+            input[type="text"] {
+                font-size: 1.5rem;
+                padding: 15px;
+                border-radius: 10px;
+                border: none;
+                width: 80%;
+                text-align: center;
+                margin-bottom: 20px;
+            }
+            #error-msg {
+                color: #ff3b30;
+                display: none;
+                margin-top: 10px;
+            }
+            #status-msg {
+                color: #aaa;
+                margin-top: 20px;
+                font-size: 0.9rem;
+            }
 
-        function exitGame() {
-            channel.send({ type: 'broadcast', event: 'mobile-action', payload: { action: 'EXIT' }});
-            location.reload();
-        }
+            /* Juego Simon */
+            #game-grid {
+                display: none;
+                height: 100vh;
+                width: 100vw;
+                flex-wrap: wrap;
+            }
+            .color-btn {
+                width: 50%;
+                height: 50vh;
+                border: none;
+                position: relative;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                outline: none;
+            }
+            .color-btn:active {
+                opacity: 0.5;
+            }
+            #btn-green {
+                background-color: #34c759;
+                order: 1;
+            }
+            #btn-red {
+                background-color: #ff3b30;
+                order: 2;
+            }
+            #btn-yellow {
+                background-color: #ffcc00;
+                order: 3;
+            }
+            #btn-blue {
+                background-color: #007aff;
+                order: 4;
+            }
 
-        // --- CONEXIÓN ESTRICTA ENCADENADA ---
-        channel
-            .on('broadcast', { event: 'tv-state' }, (data) => {
-                const state = data.payload.state;
-                if (state === 'BLOCKED') {
-                    document.getElementById('block-title').innerText = "LOOK AT THE TV";
-                    document.getElementById('block-desc').innerText = "Processing focus...";
-                    document.getElementById('block-loader').style.display = 'block';
-                    showScreen('screen-block');
-                } else if (state === 'WATCH') {
-                    document.getElementById('block-title').innerText = "MEMORIZE!";
-                    document.getElementById('block-desc').innerText = "Watch the sequence...";
-                    document.getElementById('block-loader').style.display = 'none';
-                    showScreen('screen-block');
-                } else if (state === 'PLAY') {
-                    showScreen('game-grid');
-                } else if (state === 'GAMEOVER') {
-                    showScreen('screen-gameover');
+            /* Bloqueo 10s */
+            .loader {
+                border: 10px solid #333;
+                border-top: 10px solid white;
+                border-radius: 50%;
+                width: 80px;
+                height: 80px;
+                animation: spin 1s linear infinite;
+                margin-top: 30px;
+            }
+            @keyframes spin {
+                0% {
+                    transform: rotate(0deg);
                 }
-            })
-            .subscribe((status, err) => {
-                const statusMsg = document.getElementById('status-msg');
-                const joinBtn = document.getElementById('join-btn');
-
-                if (status === 'SUBSCRIBED') {
-                    joinBtn.style.opacity = '1';
-                    joinBtn.style.pointerEvents = 'auto';
-                    joinBtn.innerText = 'JOIN';
-                    statusMsg.innerText = 'Conectado. ¡Listo para jugar!';
-                    statusMsg.style.color = '#34C759';
-                } else if (status === 'CHANNEL_ERROR') {
-                    statusMsg.innerText = 'Error de conexión. Comprueba tu Wi-Fi/Datos.';
-                    statusMsg.style.color = '#FF3B30';
-                } else if (status === 'TIMED_OUT') {
-                    statusMsg.innerText = 'Tiempo de espera agotado. Recarga la página.';
-                    statusMsg.style.color = '#FFCC00';
+                100% {
+                    transform: rotate(360deg);
                 }
-            });
-
-        // Chivato de seguridad por si Supabase ni siquiera responde
-        setTimeout(() => {
-            if (document.getElementById('join-btn').style.opacity !== '1') {
-                document.getElementById('status-msg').innerText = 'El servidor tarda mucho... ¿Tienes internet?';
             }
-        }, 5000);
-    </script>
+        </style>
+    </head>
+    <body>
+        <div id="screen-login" class="screen active">
+            <h2>ENTER NICKNAME</h2>
+            <input type="text" id="nickname-input" placeholder="Your name" maxlength="12" />
+            <button class="btn" id="join-btn" onclick="joinGame()" style="opacity: 0.5; pointer-events: none">
+                Conectando...
+            </button>
+            <p id="error-msg">Please keep it clean!</p>
+            <p id="status-msg">Esperando al servidor...</p>
+        </div>
+
+        <div id="screen-start" class="screen">
+            <h2>YOU'RE IN!</h2>
+            <p>Look at the TV.</p>
+            <button class="btn" style="background: #34c759; color: white; padding: 20px 60px" onclick="startGame()">
+                START
+            </button>
+        </div>
+
+        <div id="screen-block" class="screen" style="background-color: #000; z-index: 200">
+            <h1 id="block-title" style="color: #ff3b30">LOOK AT THE TV</h1>
+            <p id="block-desc">Processing focus...</p>
+            <div class="loader" id="block-loader"></div>
+        </div>
+
+        <div id="game-grid">
+            <button class="color-btn" id="btn-green" onclick="sendTap('#34C759')"></button>
+            <button class="color-btn" id="btn-red" onclick="sendTap('#FF3B30')"></button>
+            <button class="color-btn" id="btn-yellow" onclick="sendTap('#FFCC00')"></button>
+            <button class="color-btn" id="btn-blue" onclick="sendTap('#007AFF')"></button>
+        </div>
+
+        <div id="screen-gameover" class="screen">
+            <h1 style="margin-bottom: 40px">GAME OVER</h1>
+            <button class="btn" style="width: 80%; background: #007aff; color: white" onclick="startGame()">
+                TRY AGAIN
+            </button>
+            <button
+                class="btn"
+                style="width: 80%; background: #333; color: white"
+                onclick="alert('Scoreboard database coming soon!')">
+                SCOREBOARD
+            </button>
+            <button
+                class="btn"
+                style="width: 80%; background: #ff3b30; color: white; margin-top: 40px"
+                onclick="exitGame()">
+                EXIT
+            </button>
+        </div>
+
+        <script>
+            const supabaseUrl = "https://hpmmzyfxchqlazxkbrym.supabase.co";
+            const supabaseKey = "sb_publishable_z7XELKJhbVvNwnB1iIJq9g_7-CvO-rb";
+            const clienteSupabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+            const channel = clienteSupabase.channel("simon-sync");
+
+            const badWords = ["fuck", "shit", "bitch", "ass", "dick"];
+
+            function showScreen(id) {
+                document.querySelectorAll(".screen").forEach((s) => s.classList.remove("active"));
+                document.getElementById("game-grid").style.display = "none";
+
+                if (id === "game-grid") {
+                    document.getElementById(id).style.display = "flex";
+                } else {
+                    document.getElementById(id).classList.add("active");
+                }
+            }
+
+            function joinGame() {
+                const name = document.getElementById("nickname-input").value.trim().toLowerCase();
+                const errorMsg = document.getElementById("error-msg");
+
+                if (name.length < 2) return;
+
+                const isClean = !badWords.some((word) => name.includes(word));
+                if (!isClean) {
+                    errorMsg.style.display = "block";
+                    return;
+                }
+
+                errorMsg.style.display = "none";
+                channel.send({
+                    type: "broadcast",
+                    event: "mobile-action",
+                    payload: { action: "JOIN", value: name.toUpperCase() }
+                });
+                showScreen("screen-start");
+            }
+
+            function startGame() {
+                channel.send({ type: "broadcast", event: "mobile-action", payload: { action: "START" } });
+            }
+
+            // Variable global para controlar el tiempo (ponla justo antes de la función)
+            let ultimoToque = 0;
+
+            function sendTap(hex) {
+                const ahora = Date.now();
+                // Si han pasado menos de 250ms desde el último toque, ignoramos este (evita atascos en el servidor)
+                if (ahora - ultimoToque < 250) return;
+                ultimoToque = ahora;
+
+                // Feedback visual inmediato en el móvil (Optimistic UI)
+                const btn = Object.values(document.querySelectorAll(".color-btn")).find((b) =>
+                    b.getAttribute("onclick").includes(hex)
+                );
+                btn.style.opacity = "0.2";
+                setTimeout(() => (btn.style.opacity = "1"), 150);
+
+                // Enviamos la señal
+                channel.send({ type: "broadcast", event: "mobile-action", payload: { action: "TAP", value: hex } });
+            }
+
+            function exitGame() {
+                channel.send({ type: "broadcast", event: "mobile-action", payload: { action: "EXIT" } });
+                location.reload();
+            }
+
+            // --- CONEXIÓN ESTRICTA ENCADENADA ---
+            channel
+                .on("broadcast", { event: "tv-state" }, (data) => {
+                    const state = data.payload.state;
+                    if (state === "BLOCKED") {
+                        document.getElementById("block-title").innerText = "LOOK AT THE TV";
+                        document.getElementById("block-desc").innerText = "Processing focus...";
+                        document.getElementById("block-loader").style.display = "block";
+                        showScreen("screen-block");
+                    } else if (state === "WATCH") {
+                        document.getElementById("block-title").innerText = "MEMORIZE!";
+                        document.getElementById("block-desc").innerText = "Watch the sequence...";
+                        document.getElementById("block-loader").style.display = "none";
+                        showScreen("screen-block");
+                    } else if (state === "PLAY") {
+                        showScreen("game-grid");
+                    } else if (state === "GAMEOVER") {
+                        showScreen("screen-gameover");
+                    }
+                })
+                .subscribe((status, err) => {
+                    const statusMsg = document.getElementById("status-msg");
+                    const joinBtn = document.getElementById("join-btn");
+
+                    if (status === "SUBSCRIBED") {
+                        joinBtn.style.opacity = "1";
+                        joinBtn.style.pointerEvents = "auto";
+                        joinBtn.innerText = "JOIN";
+                        statusMsg.innerText = "Conectado. ¡Listo para jugar!";
+                        statusMsg.style.color = "#34C759";
+                    } else if (status === "CHANNEL_ERROR") {
+                        statusMsg.innerText = "Error de conexión. Comprueba tu Wi-Fi/Datos.";
+                        statusMsg.style.color = "#FF3B30";
+                    } else if (status === "TIMED_OUT") {
+                        statusMsg.innerText = "Tiempo de espera agotado. Recarga la página.";
+                        statusMsg.style.color = "#FFCC00";
+                    }
+                });
+
+            // Chivato de seguridad por si Supabase ni siquiera responde
+            setTimeout(() => {
+                if (document.getElementById("join-btn").style.opacity !== "1") {
+                    document.getElementById("status-msg").innerText = "El servidor tarda mucho... ¿Tienes internet?";
+                }
+            }, 5000);
+        </script>
+    </body>
+</html>
