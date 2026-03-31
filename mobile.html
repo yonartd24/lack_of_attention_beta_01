@@ -20,7 +20,7 @@
         #btn-green { background-color: #34C759; order: 1; } #btn-red { background-color: #FF3B30; order: 2; } #btn-yellow { background-color: #FFCC00; order: 3; } #btn-blue { background-color: #007AFF; order: 4; }  
 
         /* CAJA DE DIAGNÓSTICO */
-        #debug-panel { position: fixed; top: 10px; left: 10px; background: rgba(0,0,0,0.8); color: #00FF00; font-family: monospace; padding: 10px; z-index: 999; max-width: 250px; font-size: 12px; border: 1px solid #00FF00; pointer-events: none; /* Para no bloquear los toques */ }
+        #debug-panel { position: fixed; top: 10px; left: 10px; background: rgba(0,0,0,0.8); color: #00FF00; font-family: monospace; padding: 10px; z-index: 999; max-width: 250px; font-size: 12px; border: 1px solid #00FF00; pointer-events: none; }
     </style>
 </head>
 <body>
@@ -40,14 +40,16 @@
 
     <script>
         function log(msg) {
-            document.getElementById('debug-panel').innerHTML = "> " + msg; // Sobrescribe para no ocupar toda la pantalla
+            document.getElementById('debug-panel').innerHTML = "> " + msg; 
         }
 
+        // ¡EL ARREGLO ESTÁ AQUÍ! Usamos clienteSupabase
         const supabaseUrl = 'https://hpmmzyfxchqlazxkbrym.supabase.co';
         const supabaseKey = 'sb_publishable_z7XELKJhbVvNwnB1iIJq9g_7-CvO-rb';
-        const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+        const clienteSupabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
-        const channel = supabase.channel('simon-sync');
+        // ¡Y AQUÍ!
+        const channel = clienteSupabase.channel('simon-sync');
         channel.subscribe((status) => {
             log("Estado Supabase: <b>" + status + "</b>");
         });

@@ -9,7 +9,7 @@
         body { margin: 0; height: 100vh; display: flex; justify-content: center; align-items: center; font-family: 'Helvetica Neue', Arial, sans-serif; transition: background-color 0.1s ease; background-color: #1a1a1a; }
         h1 { color: white; font-size: 5rem; text-shadow: 2px 2px 10px rgba(0,0,0,0.3); text-align: center; pointer-events: none; }
         
-        /* CADA DE DIAGNÓSTICO */
+        /* CAJA DE DIAGNÓSTICO */
         #debug-panel { position: fixed; top: 10px; left: 10px; background: rgba(0,0,0,0.8); color: #00FF00; font-family: monospace; padding: 10px; z-index: 999; max-width: 300px; font-size: 14px; border: 1px solid #00FF00; }
     </style>
 </head>
@@ -23,9 +23,10 @@
             document.getElementById('debug-panel').innerHTML += "<br>> " + msg;
         }
 
+        // ¡EL ARREGLO ESTÁ AQUÍ! Usamos clienteSupabase
         const supabaseUrl = 'https://hpmmzyfxchqlazxkbrym.supabase.co';
         const supabaseKey = 'sb_publishable_z7XELKJhbVvNwnB1iIJq9g_7-CvO-rb';
-        const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+        const clienteSupabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
         const colors = ['#34C759', '#FF3B30', '#FFCC00', '#007AFF']; 
         let colorIndex = 0;
@@ -40,7 +41,8 @@
         }
         startLoop();
 
-        const channel = supabase.channel('simon-sync');
+        // ¡Y AQUÍ!
+        const channel = clienteSupabase.channel('simon-sync');
         
         channel.on('broadcast', { event: 'color-tap' }, (data) => {
             log("¡RECIBIDO!: " + data.payload.color);
