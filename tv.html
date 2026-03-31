@@ -6,30 +6,23 @@
     <title>TV - Beta Testing</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        body {
-            margin: 0;
-            height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-family: 'Helvetica Neue', Arial, sans-serif;
-            transition: background-color 0.1s ease;
-            background-color: #1a1a1a; 
-        }
-        h1 {
-            color: white;
-            font-size: 5rem;
-            text-shadow: 2px 2px 10px rgba(0,0,0,0.3);
-            text-align: center;
-            pointer-events: none; 
-        }
+        body { margin: 0; height: 100vh; display: flex; justify-content: center; align-items: center; font-family: 'Helvetica Neue', Arial, sans-serif; transition: background-color 0.1s ease; background-color: #1a1a1a; }
+        h1 { color: white; font-size: 5rem; text-shadow: 2px 2px 10px rgba(0,0,0,0.3); text-align: center; pointer-events: none; }
+        
+        /* CADA DE DIAGNÓSTICO */
+        #debug-panel { position: fixed; top: 10px; left: 10px; background: rgba(0,0,0,0.8); color: #00FF00; font-family: monospace; padding: 10px; z-index: 999; max-width: 300px; font-size: 14px; border: 1px solid #00FF00; }
     </style>
 </head>
 <body>
 
+    <div id="debug-panel">TV Log Iniciado...<br>Esperando conexión...</div>
     <h1 id="tv-text">BETA TESTING</h1>
 
     <script>
+        function log(msg) {
+            document.getElementById('debug-panel').innerHTML += "<br>> " + msg;
+        }
+
         const supabaseUrl = 'https://hpmmzyfxchqlazxkbrym.supabase.co';
         const supabaseKey = 'sb_publishable_z7XELKJhbVvNwnB1iIJq9g_7-CvO-rb';
         const supabase = supabase.createClient(supabaseUrl, supabaseKey);
@@ -40,23 +33,19 @@
 
         function startLoop() {
             if (loopInterval) clearInterval(loopInterval);
-            
             loopInterval = setInterval(() => {
                 colorIndex = (colorIndex + 1) % colors.length;
                 document.body.style.backgroundColor = colors[colorIndex];
             }, 2000);
         }
-        
         startLoop();
 
         const channel = supabase.channel('simon-sync');
         
-        // CORRECCIÓN AQUÍ: data.payload.color
         channel.on('broadcast', { event: 'color-tap' }, (data) => {
-            console.log("¡Señal recibida en TV!", data);
+            log("¡RECIBIDO!: " + data.payload.color);
             
             if (loopInterval) clearInterval(loopInterval);
-            
             document.body.style.backgroundColor = data.payload.color;
             document.getElementById('tv-text').innerText = "SYNC WORKED!";
             
@@ -65,7 +54,7 @@
                 startLoop();
             }, 2000);
         }).subscribe((status) => {
-            console.log("Estado conexión TV:", status);
+            log("Estado Supabase: <b>" + status + "</b>");
         });
     </script>
 </body>
