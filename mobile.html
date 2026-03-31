@@ -73,16 +73,6 @@
         
         const channel = clienteSupabase.channel('simon-sync');
         
-        channel.subscribe((status) => {
-            if (status === 'SUBSCRIBED') {
-                const joinBtn = document.getElementById('join-btn');
-                joinBtn.style.opacity = '1';
-                joinBtn.style.pointerEvents = 'auto';
-                joinBtn.innerText = 'JOIN';
-                document.getElementById('status-msg').innerText = 'Conectado. ¡Listo para jugar!';
-            }
-        });
-
         const badWords = ['fuck', 'shit', 'bitch', 'ass', 'dick'];
 
         function showScreen(id) {
@@ -121,7 +111,6 @@
             const btn = Object.values(document.querySelectorAll('.color-btn')).find(b => b.getAttribute('onclick').includes(hex));
             btn.style.opacity = '0.2';
             setTimeout(() => btn.style.opacity = '1', 150);
-
             channel.send({ type: 'broadcast', event: 'mobile-action', payload: { action: 'TAP', value: hex }});
         }
 
@@ -130,4 +119,49 @@
             location.reload();
         }
 
-        // --- ESCUCHAR A
+        // --- CONEXIÓN ESTRICTA ENCADENADA ---
+        channel
+            .on('broadcast', { event: 'tv-state' }, (data) => {
+                const state = data.payload.state;
+                if (state === 'BLOCKED') {
+                    document.getElementById('block-title').innerText = "LOOK AT THE TV";
+                    document.getElementById('block-desc').innerText = "Processing focus...";
+                    document.getElementById('block-loader').style.display = 'block';
+                    showScreen('screen-block');
+                } else if (state === 'WATCH') {
+                    document.getElementById('block-title').innerText = "MEMORIZE!";
+                    document.getElementById('block-desc').innerText = "Watch the sequence...";
+                    document.getElementById('block-loader').style.display = 'none';
+                    showScreen('screen-block');
+                } else if (state === 'PLAY') {
+                    showScreen('game-grid');
+                } else if (state === 'GAMEOVER') {
+                    showScreen('screen-gameover');
+                }
+            })
+            .subscribe((status, err) => {
+                const statusMsg = document.getElementById('status-msg');
+                const joinBtn = document.getElementById('join-btn');
+
+                if (status === 'SUBSCRIBED') {
+                    joinBtn.style.opacity = '1';
+                    joinBtn.style.pointerEvents = 'auto';
+                    joinBtn.innerText = 'JOIN';
+                    statusMsg.innerText = 'Conectado. ¡Listo para jugar!';
+                    statusMsg.style.color = '#34C759';
+                } else if (status === 'CHANNEL_ERROR') {
+                    statusMsg.innerText = 'Error de conexión. Comprueba tu Wi-Fi/Datos.';
+                    statusMsg.style.color = '#FF3B30';
+                } else if (status === 'TIMED_OUT') {
+                    statusMsg.innerText = 'Tiempo de espera agotado. Recarga la página.';
+                    statusMsg.style.color = '#FFCC00';
+                }
+            });
+
+        // Chivato de seguridad por si Supabase ni siquiera responde
+        setTimeout(() => {
+            if (document.getElementById('join-btn').style.opacity !== '1') {
+                document.getElementById('status-msg').innerText = 'El servidor tarda mucho... ¿Tienes internet?';
+            }
+        }, 5000);
+    </script>
