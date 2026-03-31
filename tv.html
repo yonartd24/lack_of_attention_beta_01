@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TV - Beta Testing</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body {
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            transition: background-color 0.1s ease;
+            background-color: #1a1a1a; 
+        }
+        h1 {
+            color: white;
+            font-size: 5rem;
+            text-shadow: 2px 2px 10px rgba(0,0,0,0.3);
+            text-align: center;
+            pointer-events: none; 
+        }
+    </style>
+</head>
+<body>
+
+    <h1 id="tv-text">BETA TESTING</h1>
+
+    <script>
+        // 1. TUS CLAVES DE SUPABASE INTEGRADAS
+        const supabaseUrl = 'https://hpmmzyfxchqlazxkbrym.supabase.co';
+        const supabaseKey = 'sb_publishable_z7XELKJhbVvNwnB1iIJq9g_7-CvO-rb';
+        const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+
+        // 2. BUCLE DE COLORES (Verde, Rojo, Amarillo, Azul)
+        const colors = ['#34C759', '#FF3B30', '#FFCC00', '#007AFF']; 
+        let colorIndex = 0;
+        let loopInterval;
+
+        function startLoop() {
+            if (loopInterval) clearInterval(loopInterval);
+            
+            loopInterval = setInterval(() => {
+                colorIndex = (colorIndex + 1) % colors.length;
+                document.body.style.backgroundColor = colors[colorIndex];
+            }, 2000);
+        }
+        
+        startLoop();
+
+        // 3. RECIBIR DATOS DEL MÓVIL EN TIEMPO REAL
+        const channel = supabase.channel('simon-sync');
+        
+        channel.on('broadcast', { event: 'color-tap' }, (payload) => {
+            console.log("¡Sincronización recibida!", payload.color);
+            
+            if (loopInterval) clearInterval(loopInterval);
+            
+            document.body.style.backgroundColor = payload.color;
+            document.getElementById('tv-text').innerText = "SYNC WORKED!";
+            
+            setTimeout(() => {
+                document.getElementById('tv-text').innerText = "BETA TESTING";
+                startLoop();
+            }, 2000);
+        }).subscribe((status) => {
+            console.log("Estado conexión TV:", status);
+        });
+    </script>
+</body>
+</html>
