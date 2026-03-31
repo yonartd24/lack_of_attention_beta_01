@@ -30,12 +30,10 @@
     <h1 id="tv-text">BETA TESTING</h1>
 
     <script>
-        // 1. TUS CLAVES DE SUPABASE INTEGRADAS
         const supabaseUrl = 'https://hpmmzyfxchqlazxkbrym.supabase.co';
         const supabaseKey = 'sb_publishable_z7XELKJhbVvNwnB1iIJq9g_7-CvO-rb';
         const supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
-        // 2. BUCLE DE COLORES (Verde, Rojo, Amarillo, Azul)
         const colors = ['#34C759', '#FF3B30', '#FFCC00', '#007AFF']; 
         let colorIndex = 0;
         let loopInterval;
@@ -51,15 +49,15 @@
         
         startLoop();
 
-        // 3. RECIBIR DATOS DEL MÓVIL EN TIEMPO REAL
         const channel = supabase.channel('simon-sync');
         
-        channel.on('broadcast', { event: 'color-tap' }, (payload) => {
-            console.log("¡Sincronización recibida!", payload.color);
+        // CORRECCIÓN AQUÍ: data.payload.color
+        channel.on('broadcast', { event: 'color-tap' }, (data) => {
+            console.log("¡Señal recibida en TV!", data);
             
             if (loopInterval) clearInterval(loopInterval);
             
-            document.body.style.backgroundColor = payload.color;
+            document.body.style.backgroundColor = data.payload.color;
             document.getElementById('tv-text').innerText = "SYNC WORKED!";
             
             setTimeout(() => {

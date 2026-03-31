@@ -7,81 +7,34 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         body, html { 
-            margin: 0; 
-            padding: 0; 
-            height: 100%; 
-            width: 100%;
+            margin: 0; padding: 0; height: 100%; width: 100%;
             font-family: 'Helvetica Neue', Arial, sans-serif; 
-            overflow: hidden; 
-            background-color: #1a1a1a;
-            -webkit-touch-callout: none; 
-            -webkit-user-select: none; 
+            overflow: hidden; background-color: #1a1a1a;
+            -webkit-touch-callout: none; -webkit-user-select: none; 
         }
         
         #start-screen {
-            position: fixed; 
-            top: 0; left: 0;
-            height: 100vh; width: 100vw;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            color: white;
-            font-size: 1.5rem;
-            text-align: center;
-            cursor: pointer;
-            z-index: 100; 
+            position: fixed; top: 0; left: 0; height: 100vh; width: 100vw;
+            display: flex; justify-content: center; align-items: center;
+            color: white; font-size: 1.5rem; text-align: center; cursor: pointer; z-index: 100; 
         }
 
-        #game-screen {
-            display: none; 
-            height: 100vh;
-            width: 100vw;
-            display: flex;
-            flex-wrap: wrap; 
-        }
+        #game-screen { display: none; height: 100vh; width: 100vw; display: flex; flex-wrap: wrap; }
         
         .color-btn {
-            width: 50%; 
-            height: 50vh; 
-            border: none;
-            outline: none;
-            cursor: pointer;
-            margin: 0;
-            padding: 20px;
-            box-sizing: border-box;
-            position: relative; 
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            width: 50%; height: 50vh; border: none; outline: none; cursor: pointer;
+            margin: 0; padding: 20px; box-sizing: border-box; position: relative; 
+            display: flex; justify-content: center; align-items: center;
         }
+        .color-btn:active { opacity: 0.5; transform: scale(0.98); }
         
-        .color-btn:active {
-            opacity: 0.5;
-            transform: scale(0.98);
-        }
-        
-        .centered-text {
-            color: white;
-            font-size: 2rem;
-            font-weight: bold;
-            pointer-events: none; 
-        }
-
-        .corner-number {
-            position: absolute;
-            top: 15px;
-            right: 20px;
-            color: white;
-            font-size: 2.5rem;
-            font-weight: bold;
-            pointer-events: none;
-        }
+        .centered-text { color: white; font-size: 2rem; font-weight: bold; pointer-events: none; }
+        .corner-number { position: absolute; top: 15px; right: 20px; color: white; font-size: 2.5rem; font-weight: bold; pointer-events: none; }
         
         #btn-green { background-color: #34C759; order: 1; } 
         #btn-red { background-color: #FF3B30; order: 2; }   
         #btn-yellow { background-color: #FFCC00; order: 3; }
         #btn-blue { background-color: #007AFF; order: 4; }  
-
     </style>
 </head>
 <body>
@@ -91,26 +44,13 @@
     </div>
 
     <div id="game-screen">
-        <button class="color-btn" id="btn-green" onclick="sendColor('#34C759')">
-            <span class="corner-number">1</span>
-            <span class="centered-text">123...</span>
-        </button>
-        <button class="color-btn" id="btn-red" onclick="sendColor('#FF3B30')">
-            <span class="corner-number">2</span>
-            <span class="centered-text">123...</span>
-        </button>
-        <button class="color-btn" id="btn-yellow" onclick="sendColor('#FFCC00')">
-            <span class="corner-number">3</span>
-            <span class="centered-text">123...</span>
-        </button>
-        <button class="color-btn" id="btn-blue" onclick="sendColor('#007AFF')">
-            <span class="corner-number">4</span>
-            <span class="centered-text">123...</span>
-        </button>
+        <button class="color-btn" id="btn-green" onclick="sendColor('#34C759')"><span class="corner-number">1</span><span class="centered-text">123...</span></button>
+        <button class="color-btn" id="btn-red" onclick="sendColor('#FF3B30')"><span class="corner-number">2</span><span class="centered-text">123...</span></button>
+        <button class="color-btn" id="btn-yellow" onclick="sendColor('#FFCC00')"><span class="corner-number">3</span><span class="centered-text">123...</span></button>
+        <button class="color-btn" id="btn-blue" onclick="sendColor('#007AFF')"><span class="corner-number">4</span><span class="centered-text">123...</span></button>
     </div>
 
     <script>
-        // 1. TUS CLAVES DE SUPABASE INTEGRADAS
         const supabaseUrl = 'https://hpmmzyfxchqlazxkbrym.supabase.co';
         const supabaseKey = 'sb_publishable_z7XELKJhbVvNwnB1iIJq9g_7-CvO-rb';
         const supabase = supabase.createClient(supabaseUrl, supabaseKey);
@@ -132,6 +72,8 @@
                 type: 'broadcast',
                 event: 'color-tap',
                 payload: { color: hexColor }
+            }).then((resp) => {
+                console.log("Respuesta de envío:", resp);
             });
         }
     </script>
