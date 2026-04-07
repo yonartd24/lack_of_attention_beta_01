@@ -13,7 +13,7 @@
             p { font-size: 1.5rem; color: #aaa; }
             
             #simon-board { display: grid; grid-template-columns: 1fr 1fr; width: 80vh; height: 80vh; gap: 10px; margin: 0 auto; display: none; }
-            .simon-color { border-radius: 20px; opacity: 0.3; transition: opacity 0.15s; } /* Transición más rápida */
+            .simon-color { border-radius: 20px; opacity: 0.3; transition: opacity 0.15s; } 
             .simon-color.highlight { opacity: 1; box-shadow: 0 0 30px rgba(255, 255, 255, 0.8); }
             
             #fact-container { position: absolute; background: rgba(0, 0, 0, 0.9); padding: 40px; border-radius: 20px; border: 2px solid white; max-width: 60%; z-index: 50; display: none; }
@@ -59,7 +59,6 @@
             const clienteSupabase = window.supabase.createClient(supabaseUrl, supabaseKey);
             const channel = clienteSupabase.channel("simon-sync");
 
-            // --- TUS 100 DATOS (Formato Array) ---
             const facts = [
                 `Avondale Middle School recorded a 68% reduction in physical fighting after removing phones.`,
                 `Michigan pilot districts saw a 51% decrease in phone violations following the ban.`,
@@ -214,10 +213,10 @@
 
                 let showFact = false;
                 
-                // REGLA: No empezar con dato. Solo del nivel 2 al 10, y luego cada 5.
-                if (level > 1 && level <= 10) {
+                // NUEVA LÓGICA: Datos frecuentes hasta el nivel 5. Luego cada 5.
+                if (level > 1 && level <= 5) {
                     showFact = true;
-                } else if (level > 10 && level % 5 === 0) {
+                } else if (level > 5 && level % 5 === 0) {
                     showFact = true;
                 }
 
@@ -225,7 +224,7 @@
                     factsSeen++;
                     displayFactAndBlock();
                 } else {
-                    setTimeout(playSequence, 500); // Agilizado de 1000ms a 500ms
+                    setTimeout(playSequence, 500); 
                 }
 
                 if (level === 5 && !distractionInterval) {
@@ -237,13 +236,11 @@
                 const factBox = document.getElementById("fact-container");
                 const timerText = document.getElementById("tv-timer");
 
-                // REGLA: Dato Random
                 document.getElementById("fact-text").innerText = facts[Math.floor(Math.random() * facts.length)];
                 factBox.style.display = "block";
 
                 channel.send({ type: "broadcast", event: "tv-state", payload: { state: "BLOCKED" } });
 
-                // REGLA: 5 Segundos
                 let timeLeft = 5; 
                 timerText.innerText = timeLeft;
 
@@ -261,7 +258,6 @@
             function playSequence() {
                 channel.send({ type: "broadcast", event: "tv-state", payload: { state: "WATCH" } });
                 let i = 0;
-                // REGLA: Gameplay agilizado. Intervalos de 500ms (antes 800ms)
                 const interval = setInterval(() => {
                     highlightColor(sequence[i]);
                     i++;
@@ -278,7 +274,6 @@
             function highlightColor(hex) {
                 const el = document.getElementById(colorIds[hex]);
                 el.classList.add("highlight");
-                // La luz se apaga más rápido (250ms)
                 setTimeout(() => el.classList.remove("highlight"), 250); 
             }
 
@@ -288,7 +283,7 @@
                     playerStep++;
                     if (playerStep === sequence.length) {
                         isPlaying = false;
-                        setTimeout(nextRound, 800); // Antes 1000ms
+                        setTimeout(nextRound, 800); 
                     }
                 } else {
                     gameOver();
@@ -307,7 +302,6 @@
                 notif.style.top = Math.random() * 80 + "%";
                 notif.style.left = Math.random() * 80 + "%";
 
-                // REGLA: Textos genéricos, sin nombres propios.
                 const texts = ["New Like!", "Trending Topic", "Missed Call", "System Update", "Battery Low", "Storage Full", "New Follower"];
                 notif.innerText = texts[Math.floor(Math.random() * texts.length)];
 
