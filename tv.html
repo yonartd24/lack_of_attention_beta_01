@@ -28,7 +28,7 @@
         <div id="screen-wait" class="screen active">
             <h1>⬅️ SCAN TO PLAY</h1>
             <p>Is your attention for sale?</p>
-            <p id="tv-status" style="color: #00ff00; font-family: monospace; font-size: 1rem; margin-top: 20px">Esperando conexión al servidor...</p>
+            <p id="tv-status" style="color: #00ff00; font-family: monospace; font-size: 1rem; margin-top: 20px">Waiting for server connection...</p>
         </div>
 
         <div id="simon-board">
@@ -174,7 +174,7 @@
 
             channel.subscribe((status) => {
                 if (status === "SUBSCRIBED") {
-                    document.getElementById("tv-status").innerText = "Sistema Online. Listo para sincronizar.";
+                    document.getElementById("tv-status").innerText = "System Online. Ready to sync.";
                 }
             });
 
@@ -213,7 +213,6 @@
 
                 let showFact = false;
                 
-                // NUEVA LÓGICA: Datos frecuentes hasta el nivel 5. Luego cada 5.
                 if (level > 1 && level <= 5) {
                     showFact = true;
                 } else if (level > 5 && level % 5 === 0) {

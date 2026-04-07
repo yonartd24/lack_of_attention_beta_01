@@ -53,7 +53,6 @@
                 transform: scale(0.95);
             }
 
-            /* Onboarding */
             input[type="text"] {
                 font-size: 1.5rem;
                 padding: 15px;
@@ -74,7 +73,6 @@
                 font-size: 0.9rem;
             }
 
-            /* Juego Simon */
             #game-grid {
                 display: none;
                 height: 100vh;
@@ -94,24 +92,11 @@
             .color-btn:active {
                 opacity: 0.5;
             }
-            #btn-green {
-                background-color: #34c759;
-                order: 1;
-            }
-            #btn-red {
-                background-color: #ff3b30;
-                order: 2;
-            }
-            #btn-yellow {
-                background-color: #ffcc00;
-                order: 3;
-            }
-            #btn-blue {
-                background-color: #007aff;
-                order: 4;
-            }
+            #btn-green { background-color: #34c759; order: 1; }
+            #btn-red { background-color: #ff3b30; order: 2; }
+            #btn-yellow { background-color: #ffcc00; order: 3; }
+            #btn-blue { background-color: #007aff; order: 4; }
 
-            /* Bloqueo 10s */
             .loader {
                 border: 10px solid #333;
                 border-top: 10px solid white;
@@ -122,12 +107,8 @@
                 margin-top: 30px;
             }
             @keyframes spin {
-                0% {
-                    transform: rotate(0deg);
-                }
-                100% {
-                    transform: rotate(360deg);
-                }
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
             }
         </style>
     </head>
@@ -136,10 +117,10 @@
             <h2>ENTER NICKNAME</h2>
             <input type="text" id="nickname-input" placeholder="Your name" maxlength="12" />
             <button class="btn" id="join-btn" onclick="joinGame()" style="opacity: 0.5; pointer-events: none">
-                Conectando...
+                Connecting...
             </button>
             <p id="error-msg">Please keep it clean!</p>
-            <p id="status-msg">Esperando al servidor...</p>
+            <p id="status-msg">Waiting for server...</p>
         </div>
 
         <div id="screen-start" class="screen">
@@ -227,23 +208,19 @@
                 channel.send({ type: "broadcast", event: "mobile-action", payload: { action: "START" } });
             }
 
-            // Variable global para controlar el tiempo (ponla justo antes de la función)
             let ultimoToque = 0;
 
             function sendTap(hex) {
                 const ahora = Date.now();
-                // Si han pasado menos de 250ms desde el último toque, ignoramos este (evita atascos en el servidor)
                 if (ahora - ultimoToque < 250) return;
                 ultimoToque = ahora;
 
-                // Feedback visual inmediato en el móvil (Optimistic UI)
                 const btn = Object.values(document.querySelectorAll(".color-btn")).find((b) =>
                     b.getAttribute("onclick").includes(hex)
                 );
                 btn.style.opacity = "0.2";
                 setTimeout(() => (btn.style.opacity = "1"), 150);
 
-                // Enviamos la señal
                 channel.send({ type: "broadcast", event: "mobile-action", payload: { action: "TAP", value: hex } });
             }
 
@@ -252,7 +229,6 @@
                 location.reload();
             }
 
-            // --- CONEXIÓN ESTRICTA ENCADENADA ---
             channel
                 .on("broadcast", { event: "tv-state" }, (data) => {
                     const state = data.payload.state;
@@ -280,21 +256,20 @@
                         joinBtn.style.opacity = "1";
                         joinBtn.style.pointerEvents = "auto";
                         joinBtn.innerText = "JOIN";
-                        statusMsg.innerText = "Conectado. ¡Listo para jugar!";
+                        statusMsg.innerText = "Connected. Ready to play!";
                         statusMsg.style.color = "#34C759";
                     } else if (status === "CHANNEL_ERROR") {
-                        statusMsg.innerText = "Error de conexión. Comprueba tu Wi-Fi/Datos.";
+                        statusMsg.innerText = "Connection error. Check your Wi-Fi/Data.";
                         statusMsg.style.color = "#FF3B30";
                     } else if (status === "TIMED_OUT") {
-                        statusMsg.innerText = "Tiempo de espera agotado. Recarga la página.";
+                        statusMsg.innerText = "Connection timed out. Reload the page.";
                         statusMsg.style.color = "#FFCC00";
                     }
                 });
 
-            // Chivato de seguridad por si Supabase ni siquiera responde
             setTimeout(() => {
                 if (document.getElementById("join-btn").style.opacity !== "1") {
-                    document.getElementById("status-msg").innerText = "El servidor tarda mucho... ¿Tienes internet?";
+                    document.getElementById("status-msg").innerText = "Server is taking too long... Are you connected to the internet?";
                 }
             }, 5000);
         </script>
