@@ -96,20 +96,6 @@
             #btn-red { background-color: #ff3b30; order: 2; }
             #btn-yellow { background-color: #ffcc00; order: 3; }
             #btn-blue { background-color: #007aff; order: 4; }
-
-            .loader {
-                border: 10px solid #333;
-                border-top: 10px solid white;
-                border-radius: 50%;
-                width: 80px;
-                height: 80px;
-                animation: spin 1s linear infinite;
-                margin-top: 30px;
-            }
-            @keyframes spin {
-                0% { transform: rotate(0deg); }
-                100% { transform: rotate(360deg); }
-            }
         </style>
     </head>
     <body>
@@ -132,9 +118,8 @@
         </div>
 
         <div id="screen-block" class="screen" style="background-color: #000; z-index: 200">
-            <h1 id="block-title" style="color: #ff3b30">LOOK AT THE TV</h1>
-            <p id="block-desc">Processing focus...</p>
-            <div class="loader" id="block-loader"></div>
+            <h1 id="block-title" style="color: #ff3b30; font-size: 3rem; margin-bottom: 20px;">LOOK UP</h1>
+            <p id="block-desc" style="font-size: 1.5rem; color: #aaa;">Device Locked</p>
         </div>
 
         <div id="game-grid">
@@ -233,14 +218,12 @@
                 .on("broadcast", { event: "tv-state" }, (data) => {
                     const state = data.payload.state;
                     if (state === "BLOCKED") {
-                        document.getElementById("block-title").innerText = "LOOK AT THE TV";
-                        document.getElementById("block-desc").innerText = "Processing focus...";
-                        document.getElementById("block-loader").style.display = "block";
+                        document.getElementById("block-title").innerText = "LOOK UP";
+                        document.getElementById("block-desc").innerText = "Device Locked";
                         showScreen("screen-block");
                     } else if (state === "WATCH") {
                         document.getElementById("block-title").innerText = "MEMORIZE!";
                         document.getElementById("block-desc").innerText = "Watch the sequence...";
-                        document.getElementById("block-loader").style.display = "none";
                         showScreen("screen-block");
                     } else if (state === "PLAY") {
                         showScreen("game-grid");
