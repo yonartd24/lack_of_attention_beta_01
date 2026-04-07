@@ -6,29 +6,107 @@
         <title>TV - Brain Drain</title>
         <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
         <style>
-            body { margin: 0; font-family: "Helvetica Neue", Arial, sans-serif; background-color: #1a1a1a; color: white; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; transition: background-color 0.2s; }
-            .screen { display: none; text-align: center; width: 100%; padding: 20px; box-sizing: border-box; }
-            .active { display: block; }
-            h1 { font-size: 4rem; margin-bottom: 10px; }
-            p { font-size: 1.5rem; color: #aaa; }
-            
-            #simon-board { display: grid; grid-template-columns: 1fr 1fr; width: 80vh; height: 80vh; gap: 10px; margin: 0 auto; display: none; }
-            .simon-color { border-radius: 20px; opacity: 0.3; transition: opacity 0.15s; } 
-            .simon-color.highlight { opacity: 1; box-shadow: 0 0 30px rgba(255, 255, 255, 0.8); }
-            
-            #fact-container { position: absolute; background: rgba(0, 0, 0, 0.9); padding: 40px; border-radius: 20px; border: 2px solid white; max-width: 60%; z-index: 50; display: none; }
-            #fact-text { font-size: 2.5rem; line-height: 1.4; margin-bottom: 20px; }
-            #tv-timer { font-size: 4rem; font-weight: bold; color: #ff3b30; }
-            
-            .notification { position: absolute; padding: 15px 25px; border-radius: 15px; font-weight: bold; font-size: 1.2rem; color: white; box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5); z-index: 100; animation: float 3s infinite alternate; pointer-events: none; }
-            @keyframes float { from { transform: translateY(0); } to { transform: translateY(-20px); } }
+            body {
+                margin: 0;
+                font-family: "Helvetica Neue", Arial, sans-serif;
+                background-color: #1a1a1a;
+                color: white;
+                overflow: hidden;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                height: 100vh;
+                transition: background-color 0.2s;
+            }
+            .screen {
+                display: none;
+                text-align: center;
+                width: 100%;
+                padding: 20px;
+                box-sizing: border-box;
+            }
+            .active {
+                display: block;
+            }
+            h1 {
+                font-size: 4rem;
+                margin-bottom: 10px;
+            }
+            p {
+                font-size: 1.5rem;
+                color: #aaa;
+            }
+
+            #simon-board {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                width: 80vh;
+                height: 80vh;
+                gap: 10px;
+                margin: 0 auto;
+                display: none;
+            }
+            .simon-color {
+                border-radius: 20px;
+                opacity: 0.3;
+                transition: opacity 0.15s;
+            }
+            .simon-color.highlight {
+                opacity: 1;
+                box-shadow: 0 0 30px rgba(255, 255, 255, 0.8);
+            }
+
+            #fact-container {
+                position: absolute;
+                background: rgba(0, 0, 0, 0.9);
+                padding: 40px;
+                border-radius: 20px;
+                border: 2px solid white;
+                max-width: 60%;
+                z-index: 50;
+                display: none;
+            }
+            #fact-text {
+                font-size: 2.5rem;
+                line-height: 1.4;
+                margin-bottom: 20px;
+            }
+            #tv-timer {
+                font-size: 4rem;
+                font-weight: bold;
+                color: #ff3b30;
+            }
+
+            .notification {
+                position: absolute;
+                padding: 15px 25px;
+                border-radius: 15px;
+                font-weight: bold;
+                font-size: 1.2rem;
+                color: white;
+                box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
+                z-index: 100;
+                animation: float 3s infinite alternate;
+                pointer-events: none;
+            }
+            @keyframes float {
+                from {
+                    transform: translateY(0);
+                }
+                to {
+                    transform: translateY(-20px);
+                }
+            }
         </style>
     </head>
     <body>
         <div id="screen-wait" class="screen active">
             <h1>⬅️ SCAN TO PLAY</h1>
             <p>Is your attention for sale?</p>
-            <p id="tv-status" style="color: #00ff00; font-family: monospace; font-size: 1rem; margin-top: 20px">Waiting for server connection...</p>
+            <p id="tv-status" style="color: #00ff00; font-family: monospace; font-size: 1rem; margin-top: 20px">
+                Waiting for server connection...
+            </p>
         </div>
 
         <div id="simon-board">
@@ -170,7 +248,12 @@
             let isPlaying = false;
             let distractionInterval;
             const colors = ["#34C759", "#FF3B30", "#FFCC00", "#007AFF"];
-            const colorIds = { "#34C759": "tv-green", "#FF3B30": "tv-red", "#FFCC00": "tv-yellow", "#007AFF": "tv-blue" };
+            const colorIds = {
+                "#34C759": "tv-green",
+                "#FF3B30": "tv-red",
+                "#FFCC00": "tv-yellow",
+                "#007AFF": "tv-blue"
+            };
 
             channel.subscribe((status) => {
                 if (status === "SUBSCRIBED") {
@@ -183,7 +266,8 @@
                 const value = data.payload.value;
 
                 if (action === "JOIN") {
-                    document.getElementById("screen-wait").innerHTML = `<h1>${value} IS READY</h1><p>Look at your phone to start</p>`;
+                    document.getElementById("screen-wait").innerHTML =
+                        `<h1>${value} IS READY</h1><p>Look at your phone to start</p>`;
                 } else if (action === "START") {
                     startGame();
                 } else if (action === "TAP" && isPlaying) {
@@ -212,10 +296,12 @@
                 isPlaying = false;
 
                 let showFact = false;
-                
-                if (level > 1 && level <= 5) {
+
+                let showFact = false;
+
+                if (level > 1 && level <= 6) {
                     showFact = true;
-                } else if (level > 5 && level % 5 === 0) {
+                } else if (level > 6 && level % 5 === 0) {
                     showFact = true;
                 }
 
@@ -223,7 +309,7 @@
                     factsSeen++;
                     displayFactAndBlock();
                 } else {
-                    setTimeout(playSequence, 500); 
+                    setTimeout(playSequence, 500);
                 }
 
                 if (level === 5 && !distractionInterval) {
@@ -240,7 +326,7 @@
 
                 channel.send({ type: "broadcast", event: "tv-state", payload: { state: "BLOCKED" } });
 
-                let timeLeft = 5; 
+                let timeLeft = 5;
                 timerText.innerText = timeLeft;
 
                 const timer = setInterval(() => {
@@ -267,13 +353,13 @@
                             channel.send({ type: "broadcast", event: "tv-state", payload: { state: "PLAY" } });
                         }, 300);
                     }
-                }, 500); 
+                }, 500);
             }
 
             function highlightColor(hex) {
                 const el = document.getElementById(colorIds[hex]);
                 el.classList.add("highlight");
-                setTimeout(() => el.classList.remove("highlight"), 250); 
+                setTimeout(() => el.classList.remove("highlight"), 250);
             }
 
             function checkPlayerInput(colorTapped) {
@@ -282,7 +368,7 @@
                     playerStep++;
                     if (playerStep === sequence.length) {
                         isPlaying = false;
-                        setTimeout(nextRound, 800); 
+                        setTimeout(nextRound, 800);
                     }
                 } else {
                     gameOver();
@@ -301,7 +387,15 @@
                 notif.style.top = Math.random() * 80 + "%";
                 notif.style.left = Math.random() * 80 + "%";
 
-                const texts = ["New Like!", "Trending Topic", "Missed Call", "System Update", "Battery Low", "Storage Full", "New Follower"];
+                const texts = [
+                    "New Like!",
+                    "Trending Topic",
+                    "Missed Call",
+                    "System Update",
+                    "Battery Low",
+                    "Storage Full",
+                    "New Follower"
+                ];
                 notif.innerText = texts[Math.floor(Math.random() * texts.length)];
 
                 document.body.appendChild(notif);
