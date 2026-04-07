@@ -6,112 +6,29 @@
         <title>TV - Brain Drain</title>
         <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
         <style>
-            body {
-                margin: 0;
-                font-family: "Helvetica Neue", Arial, sans-serif;
-                background-color: #1a1a1a;
-                color: white;
-                overflow: hidden;
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                justify-content: center;
-                height: 100vh;
-                transition: background-color 0.2s;
-            }
-
-            .screen {
-                display: none;
-                text-align: center;
-                width: 100%;
-                padding: 20px;
-                box-sizing: border-box;
-            }
-            .active {
-                display: block;
-            }
-
-            h1 {
-                font-size: 4rem;
-                margin-bottom: 10px;
-            }
-            p {
-                font-size: 1.5rem;
-                color: #aaa;
-            }
-
-            /* Juego Simon */
-            #simon-board {
-                display: grid;
-                grid-template-columns: 1fr 1fr;
-                width: 80vh;
-                height: 80vh;
-                gap: 10px;
-                margin: 0 auto;
-                display: none;
-            }
-            .simon-color {
-                border-radius: 20px;
-                opacity: 0.3;
-                transition: opacity 0.2s;
-            }
-            .simon-color.highlight {
-                opacity: 1;
-                box-shadow: 0 0 30px rgba(255, 255, 255, 0.8);
-            }
-
-            /* Datos de Investigación */
-            #fact-container {
-                position: absolute;
-                background: rgba(0, 0, 0, 0.9);
-                padding: 40px;
-                border-radius: 20px;
-                border: 2px solid white;
-                max-width: 60%;
-                z-index: 50;
-                display: none;
-            }
-            #fact-text {
-                font-size: 2.5rem;
-                line-height: 1.4;
-                margin-bottom: 20px;
-            }
-            #tv-timer {
-                font-size: 4rem;
-                font-weight: bold;
-                color: #ff3b30;
-            }
-
-            /* Notificaciones (Distracciones) */
-            .notification {
-                position: absolute;
-                padding: 15px 25px;
-                border-radius: 15px;
-                font-weight: bold;
-                font-size: 1.2rem;
-                color: white;
-                box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
-                z-index: 100;
-                animation: float 3s infinite alternate;
-                pointer-events: none;
-            }
-            @keyframes float {
-                from {
-                    transform: translateY(0);
-                }
-                to {
-                    transform: translateY(-20px);
-                }
-            }
+            body { margin: 0; font-family: "Helvetica Neue", Arial, sans-serif; background-color: #1a1a1a; color: white; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; transition: background-color 0.2s; }
+            .screen { display: none; text-align: center; width: 100%; padding: 20px; box-sizing: border-box; }
+            .active { display: block; }
+            h1 { font-size: 4rem; margin-bottom: 10px; }
+            p { font-size: 1.5rem; color: #aaa; }
+            
+            #simon-board { display: grid; grid-template-columns: 1fr 1fr; width: 80vh; height: 80vh; gap: 10px; margin: 0 auto; display: none; }
+            .simon-color { border-radius: 20px; opacity: 0.3; transition: opacity 0.15s; } /* Transición más rápida */
+            .simon-color.highlight { opacity: 1; box-shadow: 0 0 30px rgba(255, 255, 255, 0.8); }
+            
+            #fact-container { position: absolute; background: rgba(0, 0, 0, 0.9); padding: 40px; border-radius: 20px; border: 2px solid white; max-width: 60%; z-index: 50; display: none; }
+            #fact-text { font-size: 2.5rem; line-height: 1.4; margin-bottom: 20px; }
+            #tv-timer { font-size: 4rem; font-weight: bold; color: #ff3b30; }
+            
+            .notification { position: absolute; padding: 15px 25px; border-radius: 15px; font-weight: bold; font-size: 1.2rem; color: white; box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5); z-index: 100; animation: float 3s infinite alternate; pointer-events: none; }
+            @keyframes float { from { transform: translateY(0); } to { transform: translateY(-20px); } }
         </style>
     </head>
     <body>
         <div id="screen-wait" class="screen active">
             <h1>⬅️ SCAN TO PLAY</h1>
             <p>Is your attention for sale?</p>
-            <p id="tv-status" style="color: #00ff00; font-family: monospace; font-size: 1rem; margin-top: 20px">
-                Esperando conexión al servidor...
-            </p>
+            <p id="tv-status" style="color: #00ff00; font-family: monospace; font-size: 1rem; margin-top: 20px">Esperando conexión al servidor...</p>
         </div>
 
         <div id="simon-board">
@@ -123,7 +40,7 @@
 
         <div id="fact-container">
             <div id="fact-text">Did you know?</div>
-            <div id="tv-timer">10</div>
+            <div id="tv-timer">5</div>
         </div>
 
         <div id="screen-gameover" class="screen">
@@ -142,14 +59,108 @@
             const clienteSupabase = window.supabase.createClient(supabaseUrl, supabaseKey);
             const channel = clienteSupabase.channel("simon-sync");
 
+            // --- TUS 100 DATOS (Formato Array) ---
             const facts = [
-                "Michigan schools saw a 68% drop in fights after the ban.",
-                "Removing phones added 5 equivalent days of learning per year.",
-                "Constant notifications reduce working memory capacity by 20%.",
-                "Students take 20 minutes to refocus after checking a single message.",
-                "Schools with strict phone bans report 40% less bullying.",
-                "Screen time during class correlates with lower GPA scores globally.",
-                "The mere presence of a smartphone on a desk reduces cognitive capacity."
+                `Avondale Middle School recorded a 68% reduction in physical fighting after removing phones.`,
+                `Michigan pilot districts saw a 51% decrease in phone violations following the ban.`,
+                `Removing phones is equivalent to adding 5 extra days of learning to the school year.`,
+                `Norwegian middle schools experienced a significant decline in bullying incidents after phone restrictions.`,
+                `Regional smartphone bans in Spain led to a 15-18% reduction in school bullying.`,
+                `Michigan high school students receive an average of 100 notifications daily.`,
+                `It can take a student 20 minutes to refocus on learning after checking a single message.`,
+                `A single smartphone notification disrupts concentration for roughly 7 seconds.`,
+                `Seventy percent of principals reported a positive impact on school climate after banning phones.`,
+                `Sixty-seven percent of school leaders cited a reduction in inappropriate phone use inside buildings.`,
+                `Fifty-four percent of principals observed a drop in cyberbullying from within the school.`,
+                `Implementing a ban led to a 30% spike in suspensions for Black students during the adjustment year.`,
+                `Florida test scores improved by 1.1 percentiles in the second year of a statewide ban.`,
+                `Male students in Florida saw a 1.4 percentile gain in test scores after the ban.`,
+                `Prohibiting phones in the UK was linked to a 6.4% increase in national exam scores.`,
+                `Grades in phone-free college classrooms rose by 0.07 standard deviations.`,
+                `Low-achieving students in college saw double the average grade uplift in phone-free rooms.`,
+                `Removing phones is equivalent to providing one hour of additional instruction per week.`,
+                `Seventy-five percent of Dutch educators reported that bans improved student concentration.`,
+                `Fifty-nine percent of teachers in the Netherlands noted a better learning environment post-ban.`,
+                `In Norway, middle school phone bans significantly improved the GPA of girls.`,
+                `Eighty-one percent of teachers agreed that a ban improves student academic performance.`,
+                `Students without smartphones performed significantly better on attention and processing speed tests.`,
+                `Higher test scores were found specifically in Spanish regions that adopted phone bans.`,
+                `Ninety-seven percent of teens report using their smartphones during school hours.`,
+                `Half of students receive more than 237 notifications on a typical day.`,
+                `One in three students will migrate their digital distractions to laptops if phones are banned.`,
+                `Physical distance from a phone is required to fully escape its cognitive pull.`,
+                `Using a phone for socialization motives is strongly associated with academic decline.`,
+                `Self-reported study quality is significantly higher when students are not using smartphones.`,
+                `Seventy-two percent of high school teachers call phones a major barrier to teaching.`,
+                `One hundred percent of teachers in a Marietta academy agreed bans improved classroom management.`,
+                `Eighty-eight percent of youth support classroom bans specifically to reduce distractions.`,
+                `Only one in ten students supports a "bell-to-bell" all-day phone policy.`,
+                `Sixty-eight percent of U.S. adults support banning phone use during class time.`,
+                `Seventy-four percent of parents support prohibiting phones during instructional time.`,
+                `In Maryland, 88% of principals reported reduced distractions after strict policies were set.`,
+                `Three out of four teachers in elementary schools reported having a bell-to-bell ban.`,
+                `Forty-six percent of students believe they should learn to use phones responsibly rather than ban them.`,
+                `Eighty-one percent of youth believe parents should be able to reach them during school.`,
+                `By 2026, 58% of all monitored nations had implemented national school phone policies.`,
+                `Policy adoption for phone bans increased by 150% between 2023 and 2026.`,
+                `As of 2026, 44 U.S. states have taken formal action to address school smartphone use.`,
+                `Michigan ranks 44th in the nation for education proficiency.`,
+                `Over 50% of Michigan 3rd-grade students fail to meet reading proficiency levels.`,
+                `Thirty-one U.S. states required districts to limit or ban phones by October 2025.`,
+                `Twenty-two states have enacted "bell-to-bell" bans for the entire school day.`,
+                `Sixteen countries are currently in active discussions to introduce national phone bans.`,
+                `The UNESCO GEM report found that one-quarter of countries had phone laws in place by 2023.`,
+                `New York's budget allocated $13.5 million to help schools purchase phone storage solutions.`,
+                `Moderate physical activity among Danish students increased significantly after a recess phone ban.`,
+                `The frequency of physical activity during recess rose by 37% (odds ratio 1.37) post-ban.`,
+                `Attendance at after-school sporting events jumped 50% at KIPP NYC after the ban.`,
+                `Nearly 1 in 6 Michigan teens report suffering from clinical anxiety or depression.`,
+                `Seventy-two percent of school leaders believe phones have a negative impact on mental health.`,
+                `Students who spend over three hours on social media are twice as likely to be depressed.`,
+                `Eighty-one percent of students noticed a negative change in their study habits after getting a phone.`,
+                `Sleep deprivation is experienced by 48.7% of students who use phones excessively.`,
+                `A Gamma value of -0.09 confirms that excessive entertainment use on phones harms grades.`,
+                `Sixty-six percent of students identified social media notifications as their biggest study distraction.`,
+                `A magnetic pouch system costs an average of $25 to $30 per student.`,
+                `Nearly half of schools currently use a "no-show" policy where phones stay in pockets.`,
+                `Centralized storage in lockers or pouches is linked to more focused classrooms than pocket storage.`,
+                `Florida unexcused absences dropped significantly, accounting for half of the test score gains.`,
+                `Eighty-three percent of NEA members support prohibiting personal device use for the entire day.`,
+                `Ninety-five percent of college students bring their smartphones to every class.`,
+                `Eighty-six percent of students believe smartphones facilitate the acquisition of learning materials.`,
+                `One in three students in statistics programs used phones more than 6 hours a day.`,
+                `Students using phones in lectures took fewer and less detailed notes.`,
+                `One hundred million dollars was allocated in Pennsylvania to help schools purchase phone pouches.`,
+                `75% of adults globally now support some form of a school cellphone ban.`,
+                `60% of teachers say students now use smartwatches to text and play games during class.`,
+                `94% of adults in advanced economies now own a smartphone.`,
+                `50% of teachers believe smartwatches have replaced phones as the primary classroom distraction.`,
+                `In Florida, suspensions for Black students rose by 30% during the first year of the ban.`,
+                `Male students in Florida saw a large increase in disciplinary incidents while females saw none.`,
+                `77% of public schools currently prohibit student phone use during any class.`,
+                `86% of elementary schools have phone policies compared to just 55% of high schools.`,
+                `30% of schools prohibit phone use both during class and during free periods.`,
+                `53% of school leaders report negative impacts of phone use on academic performance.`,
+                `73% of school leaders say phones have damaged students' attention spans.`,
+                `Students with honours results above 3.70 typically spend only 1-2 hours on social media.`,
+                `85.7% of participants in a cross-sectional study showed a high level of daily phone use.`,
+                `66.4% of high-usage students exhibited low academic performance in recent testing.`,
+                `43% of students report using their phones 1-10 times during every class period.`,
+                `28.3% of nursing students report using their phones more than 30 times per session.`,
+                `Average screen time for people aged 15-24 in the U.S. is approximately 7 hours daily.`,
+                `Text messaging and short-form videos act as bridge nodes connecting screen time to lower grades.`,
+                `97.6% of medical students in a Mexican cohort reported owning a smartphone.`,
+                `First-year students notch the biggest improvements when phones are removed from the classroom.`,
+                `Batching notifications three times a day significantly reduces stress and negative affect.`,
+                `Never receiving notifications increased anxiety levels by a Cohen’s d of 0.56.`,
+                `Average attention span dropped from 12 seconds in 2000 to just 8 seconds in recent years.`,
+                `Sixty-three percent of college students spend 2-4 hours per day on short-form videos.`,
+                `43.3% of students screened positive for ADHD-like symptoms in high-screen-time groups.`,
+                `Course comprehension was significantly higher for students whose phones were physically removed.`,
+                `Eighty-one percent of teachers agree that bans improve overall student behavior.`,
+                `Danish schools observed that vigorous physical activity decreased during recess phone bans.`,
+                `76% of U.S. schools banned non-academic phone use during the 2021-22 school year.`,
+                `The "brain drain" effect returns the moment a phone re-enters the environment.`
             ];
 
             let sequence = [];
@@ -160,12 +171,7 @@
             let isPlaying = false;
             let distractionInterval;
             const colors = ["#34C759", "#FF3B30", "#FFCC00", "#007AFF"];
-            const colorIds = {
-                "#34C759": "tv-green",
-                "#FF3B30": "tv-red",
-                "#FFCC00": "tv-yellow",
-                "#007AFF": "tv-blue"
-            };
+            const colorIds = { "#34C759": "tv-green", "#FF3B30": "tv-red", "#FFCC00": "tv-yellow", "#007AFF": "tv-blue" };
 
             channel.subscribe((status) => {
                 if (status === "SUBSCRIBED") {
@@ -178,8 +184,7 @@
                 const value = data.payload.value;
 
                 if (action === "JOIN") {
-                    document.getElementById("screen-wait").innerHTML =
-                        `<h1>${value} IS READY</h1><p>Look at your phone to start</p>`;
+                    document.getElementById("screen-wait").innerHTML = `<h1>${value} IS READY</h1><p>Look at your phone to start</p>`;
                 } else if (action === "START") {
                     startGame();
                 } else if (action === "TAP" && isPlaying) {
@@ -207,19 +212,22 @@
                 sequence.push(colors[Math.floor(Math.random() * colors.length)]);
                 isPlaying = false;
 
-                // Lógica de aparición de datos (cada vez hasta el 10, luego cada 5)
                 let showFact = false;
-                if (level <= 10) showFact = true;
-                else if (level % 5 === 0) showFact = true;
+                
+                // REGLA: No empezar con dato. Solo del nivel 2 al 10, y luego cada 5.
+                if (level > 1 && level <= 10) {
+                    showFact = true;
+                } else if (level > 10 && level % 5 === 0) {
+                    showFact = true;
+                }
 
                 if (showFact) {
                     factsSeen++;
                     displayFactAndBlock();
                 } else {
-                    setTimeout(playSequence, 1000);
+                    setTimeout(playSequence, 500); // Agilizado de 1000ms a 500ms
                 }
 
-                // Distracciones a partir del nivel 5
                 if (level === 5 && !distractionInterval) {
                     distractionInterval = setInterval(spawnDistraction, 3000);
                 }
@@ -229,13 +237,14 @@
                 const factBox = document.getElementById("fact-container");
                 const timerText = document.getElementById("tv-timer");
 
-                document.getElementById("fact-text").innerText = facts[(factsSeen - 1) % facts.length];
+                // REGLA: Dato Random
+                document.getElementById("fact-text").innerText = facts[Math.floor(Math.random() * facts.length)];
                 factBox.style.display = "block";
 
-                // Bloqueamos el móvil
                 channel.send({ type: "broadcast", event: "tv-state", payload: { state: "BLOCKED" } });
 
-                let timeLeft = 10;
+                // REGLA: 5 Segundos
+                let timeLeft = 5; 
                 timerText.innerText = timeLeft;
 
                 const timer = setInterval(() => {
@@ -250,9 +259,9 @@
             }
 
             function playSequence() {
-                // Decimos al móvil que mire la TV
                 channel.send({ type: "broadcast", event: "tv-state", payload: { state: "WATCH" } });
                 let i = 0;
+                // REGLA: Gameplay agilizado. Intervalos de 500ms (antes 800ms)
                 const interval = setInterval(() => {
                     highlightColor(sequence[i]);
                     i++;
@@ -260,17 +269,17 @@
                         clearInterval(interval);
                         setTimeout(() => {
                             isPlaying = true;
-                            // Desbloqueamos el móvil para jugar
                             channel.send({ type: "broadcast", event: "tv-state", payload: { state: "PLAY" } });
-                        }, 500);
+                        }, 300);
                     }
-                }, 800);
+                }, 500); 
             }
 
             function highlightColor(hex) {
                 const el = document.getElementById(colorIds[hex]);
                 el.classList.add("highlight");
-                setTimeout(() => el.classList.remove("highlight"), 400);
+                // La luz se apaga más rápido (250ms)
+                setTimeout(() => el.classList.remove("highlight"), 250); 
             }
 
             function checkPlayerInput(colorTapped) {
@@ -279,7 +288,7 @@
                     playerStep++;
                     if (playerStep === sequence.length) {
                         isPlaying = false;
-                        setTimeout(nextRound, 1000);
+                        setTimeout(nextRound, 800); // Antes 1000ms
                     }
                 } else {
                     gameOver();
@@ -289,7 +298,6 @@
             function spawnDistraction() {
                 if (!isPlaying) return;
 
-                // SISTEMA ANTI-LAG: Si ya hay 4 notificaciones en pantalla, no creamos más para no saturar la memoria
                 const currentNotifs = document.querySelectorAll(".notification");
                 if (currentNotifs.length > 3) return;
 
@@ -299,12 +307,12 @@
                 notif.style.top = Math.random() * 80 + "%";
                 notif.style.left = Math.random() * 80 + "%";
 
-                const texts = ["New Like!", "Trending Topic", "Missed Call", "Message from Vanesa", "Battery Low"];
+                // REGLA: Textos genéricos, sin nombres propios.
+                const texts = ["New Like!", "Trending Topic", "Missed Call", "System Update", "Battery Low", "Storage Full", "New Follower"];
                 notif.innerText = texts[Math.floor(Math.random() * texts.length)];
 
                 document.body.appendChild(notif);
 
-                // Las destruimos a los 3 segundos en lugar de 4 para limpiar la memoria más rápido
                 setTimeout(() => notif.remove(), 3000);
             }
 
