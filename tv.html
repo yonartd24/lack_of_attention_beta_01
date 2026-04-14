@@ -7,7 +7,6 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
-            /* Colores oficiales de tu PDF */
             --c-green: #1ad872;
             --c-red: #f9432d;
             --c-yellow: #efd828;
@@ -32,7 +31,7 @@
             display: none; 
             width: 100%; 
             height: 100%; 
-            padding: 50px; /* Ajuste manual general de los bordes de la pantalla */
+            padding: 50px; 
             box-sizing: border-box; 
             flex-direction: column; 
             justify-content: center; 
@@ -40,35 +39,16 @@
         }
         .active { display: flex; }
         
-        /* Ajuste manual para el texto principal */
-        .title-text { 
-            font-size: 6rem; 
-            margin: 0; 
-            font-weight: 900; 
-            text-transform: uppercase; 
-            text-align: center; /* Cambia a 'left' si quieres alinearlo a la izquierda */
-        }
-        .subtitle-text { 
-            font-size: 3rem; 
-            margin-top: 10px; /* Separación con el título */
-            font-weight: bold; 
-            text-align: center;
-        }
+        .title-text { font-size: 6rem; margin: 0; font-weight: 900; text-transform: uppercase; text-align: center; }
+        .subtitle-text { font-size: 3rem; margin-top: 10px; font-weight: bold; text-align: center; }
         
         .bouncing-arrow { font-size: 5rem; animation: bounce 1.5s ease-in-out infinite; margin-top: 40px; }
         @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(30px); } }
 
-        /* JUEGO SIMON (Efecto Blur Mejorado) */
+        /* JUEGO SIMON */
         #simon-board { display: none; grid-template-columns: 1fr 1fr; width: 80vh; height: 80vh; gap: 20px; position: relative; }
-        .simon-color { 
-            border-radius: 30px; 
-            opacity: 0.2; /* Inactivo se ve apagado */
-            transition: all 0.2s ease; 
-        }
-        .simon-color.highlight { 
-            opacity: 1; /* Activo se ve 100% brillante */
-            transform: scale(1.02); 
-        }
+        .simon-color { border-radius: 30px; opacity: 0.2; transition: all 0.2s ease; }
+        .simon-color.highlight { opacity: 1; transform: scale(1.02); }
         
         #tv-green { background-color: var(--c-green); } #tv-green.highlight { box-shadow: 0 0 60px var(--c-green), inset 0 0 30px white; }
         #tv-red { background-color: var(--c-red); } #tv-red.highlight { box-shadow: 0 0 60px var(--c-red), inset 0 0 30px white; }
@@ -83,13 +63,13 @@
         #tv-timer-container { display: flex; justify-content: flex-end; }
         #tv-timer { font-size: 4rem; font-weight: 900; background: white; border-radius: 20px; border: 4px solid black; padding: 10px 40px; }
         
-        /* DATA SCREENS (Game Over) */
+        /* DATA SCREENS */
         .data-screen { background: black; color: white; width: 100%; height: 100%; align-items: flex-start; padding-left: 10%; }
         .data-row { font-size: 2.5rem; margin: 20px 0; font-weight: bold; text-align: left; }
         .data-row span { color: #888; font-size: 2rem; display: block; font-weight: normal; margin-top: 5px;}
 
-        /* SCOREBOARD EXACTO AL PDF */
-        #scoreboard-container { display: grid; grid-template-columns: repeat(5, 1fr); grid-template-rows: repeat(2, 1fr); gap: 2px; background-color: var(--c-red); /* Esto hace las líneas rojas */ width: 100%; height: 70vh; margin-top: 20px;}
+        /* SCOREBOARD */
+        #scoreboard-container { display: grid; grid-template-columns: repeat(5, 1fr); grid-template-rows: repeat(2, 1fr); gap: 2px; background-color: var(--c-red); width: 100%; height: 70vh; margin-top: 20px;}
         .sb-cell { background-color: black; display: flex; flex-direction: column; justify-content: center; align-items: flex-start; padding: 20px; }
         .sb-number { font-size: 5rem; font-weight: 900; margin: 0; }
         .sb-name { font-size: 1.5rem; color: white; margin-top: 10px; }
@@ -106,7 +86,7 @@
     <audio id="snd-fact" src="sounds/sound_4.mp3" preload="auto"></audio>
 
     <div id="audio-overlay" onclick="initExperience()">
-        <h1 style="color: white; border: 2px solid white; padding: 20px; border-radius: 20px;">CLICK HERE TO START EXPERIENCE</h1>
+        <h1 style="color: white; border: 2px solid white; padding: 20px; border-radius: 20px;">CLICK HERE TO START THE INSTALLATION</h1>
     </div>
 
     <div id="screen-idle" class="screen">
@@ -167,15 +147,19 @@
     </div>
 
     <script>
-        // DOM Elements para Sonidos
         const sndBg = document.getElementById('snd-bg');
         const sndColor = document.getElementById('snd-color');
         const sndStart = document.getElementById('snd-start');
         const sndFact = document.getElementById('snd-fact');
 
+        function playSound(audioEl) {
+            audioEl.currentTime = 0;
+            audioEl.play().catch(e => console.log("Audio play falló", e));
+        }
+
         function initExperience() {
             document.getElementById('audio-overlay').style.display = 'none';
-            sndBg.play().catch(e => console.log("Audio play falló", e));
+            playSound(sndBg);
             showScreen('screen-idle');
         }
 
@@ -208,6 +192,10 @@
             "It can take a student 20 minutes to refocus on learning after checking a single message."
         ];
         
+        // VARIABLES DEL SISTEMA DE COLAS
+        let activePlayer = null;
+        let queue = [];
+
         let sequence = [];
         let playerStep = 0;
         let level = 0;
@@ -228,31 +216,75 @@
             }
         }
 
+        // --- SISTEMA DE GESTIÓN DE JUGADORES ---
         channel.on("broadcast", { event: "mobile-action" }, (data) => {
             const action = data.payload.action;
-            const value = data.payload.value;
+            const value = data.payload.value; // El nickname
 
             if (action === "JOIN") {
-                sndBg.pause(); // Pausa la música
-                // ACTUALIZA EL NICKNAME EN LA TV
-                document.getElementById('tv-player-name').innerText = value.toUpperCase();
-                showScreen('screen-scan-wait');
-                setTimeout(() => showScreen('screen-ready'), 2000); 
+                if (!activePlayer) {
+                    acceptPlayer(value);
+                } else {
+                    if (!queue.includes(value) && value !== activePlayer) {
+                        queue.push(value);
+                    }
+                    updateQueueBroadcast();
+                }
             } else if (action === "START" || action === "TRY_AGAIN") {
-                sndStart.currentTime = 0; sndStart.play();
-                startGame();
+                if (value === activePlayer) {
+                    playSound(sndStart);
+                    startGame();
+                }
             } else if (action === "TAP" && isPlaying) {
-                checkPlayerInput(value);
-            } else if (action === "SCOREBOARD_REQ") {
+                if (value.player === activePlayer) {
+                    checkPlayerInput(value.hex);
+                }
+            } else if (action === "SCOREBOARD_REQ" && value === activePlayer) {
                 showScreen('screen-scoreboard');
-            } else if (action === "EXTRA_INFO_REQ") {
+            } else if (action === "EXTRA_INFO_REQ" && value === activePlayer) {
                 document.getElementById('chart-img').src = `charts/chart_${Math.floor(Math.random()*3)+1}.svg`;
                 showScreen('screen-extrainfo');
             } else if (action === "EXIT") {
-                location.reload();
+                if (value === activePlayer) {
+                    resetToIdleOrNext();
+                } else {
+                    // Si alguien de la cola se va, lo borramos
+                    queue = queue.filter(name => name !== value);
+                    updateQueueBroadcast();
+                }
             }
         });
 
+        function acceptPlayer(name) {
+            activePlayer = name;
+            document.getElementById('tv-player-name').innerText = name.toUpperCase();
+            sndBg.pause();
+            showScreen('screen-scan-wait');
+            setTimeout(() => showScreen('screen-ready'), 2000); 
+            // Avisamos al móvil de que ha sido aceptado
+            channel.send({ type: "broadcast", event: "tv-state", payload: { state: "ACCEPTED", player: name } });
+        }
+
+        function resetToIdleOrNext() {
+            isPlaying = false;
+            // SI HAY GENTE EN COLA, PASA EL SIGUIENTE AUTOMÁTICAMENTE
+            if (queue.length > 0) {
+                acceptPlayer(queue.shift());
+                updateQueueBroadcast();
+            } else {
+                activePlayer = null;
+                playSound(sndBg); // Vuelve la música del lobby
+                showScreen('screen-idle');
+            }
+        }
+
+        function updateQueueBroadcast() {
+            queue.forEach((p, index) => {
+                channel.send({ type: "broadcast", event: "tv-state", payload: { state: "WAITLIST", player: p, position: index + 1 } });
+            });
+        }
+
+        // --- LÓGICA DEL JUEGO ---
         function startGame() {
             showScreen('screen-game');
             sequence = []; level = 0; factsSeen = 0; startTime = Date.now();
@@ -288,9 +320,9 @@
             document.getElementById('simon-board').style.display = 'none';
             factBox.style.display = "block";
             
-            sndFact.currentTime = 0; sndFact.play(); // Reproduce sonido Fact
+            playSound(sndFact);
 
-            channel.send({ type: "broadcast", event: "tv-state", payload: { state: "BLOCKED" } });
+            channel.send({ type: "broadcast", event: "tv-state", payload: { state: "BLOCKED", player: activePlayer } });
 
             let timeLeft = 5; timerText.innerText = timeLeft;
             const timer = setInterval(() => {
@@ -305,7 +337,7 @@
         }
 
         function playSequence() {
-            channel.send({ type: "broadcast", event: "tv-state", payload: { state: "WATCH" } });
+            channel.send({ type: "broadcast", event: "tv-state", payload: { state: "WATCH", player: activePlayer } });
             let i = 0;
             const interval = setInterval(() => {
                 highlightColor(sequence[i]);
@@ -316,7 +348,7 @@
                         isPlaying = true;
                         document.getElementById('center-counter').innerText = sequence.length;
                         document.getElementById('center-counter').style.display = 'block';
-                        channel.send({ type: "broadcast", event: "tv-state", payload: { state: "PLAY" } });
+                        channel.send({ type: "broadcast", event: "tv-state", payload: { state: "PLAY", player: activePlayer } });
                     }, 500);
                 }
             }, 800); 
@@ -324,7 +356,7 @@
 
         function highlightColor(hex) {
             const el = document.getElementById(colorIds[hex]);
-            sndColor.currentTime = 0; sndColor.play(); // Reproduce sonido Color
+            playSound(sndColor);
             el.classList.add("highlight");
             setTimeout(() => el.classList.remove("highlight"), 300); 
         }
@@ -356,7 +388,7 @@
             document.getElementById("res-facts").innerText = `${factsSeen} facts, interesting?`;
 
             showScreen('screen-gameover');
-            channel.send({ type: "broadcast", event: "tv-state", payload: { state: "GAMEOVER" } });
+            channel.send({ type: "broadcast", event: "tv-state", payload: { state: "GAMEOVER", player: activePlayer } });
         }
     </script>
 </body>
