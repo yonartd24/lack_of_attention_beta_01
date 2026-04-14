@@ -13,30 +13,8 @@
             --c-blue: #27a4e4;
         }
 
-        body { 
-            margin: 0; 
-            font-family: "Helvetica Neue", Arial, sans-serif; 
-            background-color: #1a1a1a; 
-            color: white; 
-            overflow: hidden; 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-            justify-content: center; 
-            height: 100vh; 
-            transition: background-color 0.5s; 
-        }
-        
-        .screen { 
-            display: none; 
-            width: 100%; 
-            height: 100%; 
-            padding: 50px; 
-            box-sizing: border-box; 
-            flex-direction: column; 
-            justify-content: center; 
-            align-items: center; 
-        }
+        body { margin: 0; font-family: "Helvetica Neue", Arial, sans-serif; background-color: #1a1a1a; color: white; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; transition: background-color 0.5s; }
+        .screen { display: none; width: 100%; height: 100%; padding: 50px; box-sizing: border-box; flex-direction: column; justify-content: center; align-items: center; }
         .active { display: flex; }
         
         .title-text { font-size: 6rem; margin: 0; font-weight: 900; text-transform: uppercase; text-align: center; }
@@ -86,7 +64,7 @@
     <audio id="snd-fact" src="sounds/sound_4.mp3" preload="auto"></audio>
 
     <div id="audio-overlay" onclick="initExperience()">
-        <h1 style="color: white; border: 2px solid white; padding: 20px; border-radius: 20px;">CLICK HERE TO START THE INSTALLATION</h1>
+        <h1 style="color: white; border: 2px solid white; padding: 20px; border-radius: 20px;">CLICK HERE ONCE TO ACTIVATE SCREEN</h1>
     </div>
 
     <div id="screen-idle" class="screen">
@@ -133,7 +111,6 @@
             <div class="sb-cell"><h2 class="sb-number" style="color: var(--c-blue);">#3</h2><p class="sb-name">Player name</p></div>
             <div class="sb-cell"><h2 class="sb-number" style="color: white;">#4</h2><p class="sb-name">Player name</p></div>
             <div class="sb-cell"><h2 class="sb-number" style="color: white;">#5</h2><p class="sb-name">Player name</p></div>
-            
             <div class="sb-cell"><h2 class="sb-number" style="color: white;">#6</h2><p class="sb-name">Player name</p></div>
             <div class="sb-cell"><h2 class="sb-number" style="color: white;">#7</h2><p class="sb-name">Player name</p></div>
             <div class="sb-cell"><h2 class="sb-number" style="color: white;">#8</h2><p class="sb-name">Player name</p></div>
@@ -152,14 +129,9 @@
         const sndStart = document.getElementById('snd-start');
         const sndFact = document.getElementById('snd-fact');
 
-        function playSound(audioEl) {
-            audioEl.currentTime = 0;
-            audioEl.play().catch(e => console.log("Audio play falló", e));
-        }
-
         function initExperience() {
             document.getElementById('audio-overlay').style.display = 'none';
-            playSound(sndBg);
+            sndBg.play().catch(e => console.log("Audio play falló", e));
             showScreen('screen-idle');
         }
 
@@ -192,10 +164,10 @@
             "It can take a student 20 minutes to refocus on learning after checking a single message."
         ];
         
-        // VARIABLES DEL SISTEMA DE COLAS
-        let activePlayer = null;
-        let queue = [];
-
+        // --- SISTEMA DE GESTIÓN DE JUGADORES ---
+        let activePlayer = null; // Quien está jugando ahora
+        let queue = []; // Cola de espera
+        
         let sequence = [];
         let playerStep = 0;
         let level = 0;
@@ -216,75 +188,87 @@
             }
         }
 
-        // --- SISTEMA DE GESTIÓN DE JUGADORES ---
+        // LÓGICA DE LA RED (SISTEMA DE COLAS)
         channel.on("broadcast", { event: "mobile-action" }, (data) => {
             const action = data.payload.action;
-            const value = data.payload.value; // El nickname
+            const value = data.payload.value;
+            const senderId = data.payload.id;
 
             if (action === "JOIN") {
                 if (!activePlayer) {
-                    acceptPlayer(value);
+                    // Si la TV está libre, entra directamente
+                    activePlayer = { id: senderId, name: value };
+                    sndBg.pause();
+                    document.getElementById('tv-player-name').innerText = value.toUpperCase();
+                    showScreen('screen-scan-wait');
+                    setTimeout(() => showScreen('screen-ready'), 2000); 
+                    
+                    channel.send({ type: "broadcast", event: "tv-state", payload: { state: "PLAYER_ACCEPTED", targetId: senderId } });
                 } else {
-                    if (!queue.includes(value) && value !== activePlayer) {
-                        queue.push(value);
-                    }
-                    updateQueueBroadcast();
+                    // Si hay alguien jugando, a la lista de espera
+                    queue.push({ id: senderId, name: value });
+                    channel.send({ type: "broadcast", event: "tv-state", payload: { state: "PLAYER_QUEUED", targetId: senderId, position: queue.length } });
                 }
-            } else if (action === "START" || action === "TRY_AGAIN") {
-                if (value === activePlayer) {
-                    playSound(sndStart);
+            } 
+            
+            // Acciones solo permitidas para el jugador activo
+            else if (activePlayer && senderId === activePlayer.id) {
+                if (action === "START" || action === "TRY_AGAIN") {
+                    sndStart.currentTime = 0; sndStart.play().catch(e=>{});
                     startGame();
+                } else if (action === "TAP" && isPlaying) {
+                    checkPlayerInput(value);
+                } else if (action === "SCOREBOARD_REQ") {
+                    showScreen('screen-scoreboard');
+                } else if (action === "EXTRA_INFO_REQ") {
+                    document.getElementById('chart-img').src = `charts/chart_${Math.floor(Math.random()*3)+1}.svg`;
+                    showScreen('screen-extrainfo');
+                } else if (action === "EXIT") {
+                    resetTVToIdle();
                 }
-            } else if (action === "TAP" && isPlaying) {
-                if (value.player === activePlayer) {
-                    checkPlayerInput(value.hex);
-                }
-            } else if (action === "SCOREBOARD_REQ" && value === activePlayer) {
-                showScreen('screen-scoreboard');
-            } else if (action === "EXTRA_INFO_REQ" && value === activePlayer) {
-                document.getElementById('chart-img').src = `charts/chart_${Math.floor(Math.random()*3)+1}.svg`;
-                showScreen('screen-extrainfo');
-            } else if (action === "EXIT") {
-                if (value === activePlayer) {
-                    resetToIdleOrNext();
-                } else {
-                    // Si alguien de la cola se va, lo borramos
-                    queue = queue.filter(name => name !== value);
-                    updateQueueBroadcast();
+            }
+            
+            // Si alguien en la lista de espera decide salirse
+            else if (action === "EXIT") {
+                const qIndex = queue.findIndex(p => p.id === senderId);
+                if (qIndex > -1) {
+                    queue.splice(qIndex, 1);
+                    // Actualizar números de posición a los que quedan
+                    queue.forEach((p, idx) => {
+                        channel.send({ type: "broadcast", event: "tv-state", payload: { state: "QUEUE_UPDATE", targetId: p.id, position: idx + 1 } });
+                    });
                 }
             }
         });
 
-        function acceptPlayer(name) {
-            activePlayer = name;
-            document.getElementById('tv-player-name').innerText = name.toUpperCase();
-            sndBg.pause();
-            showScreen('screen-scan-wait');
-            setTimeout(() => showScreen('screen-ready'), 2000); 
-            // Avisamos al móvil de que ha sido aceptado
-            channel.send({ type: "broadcast", event: "tv-state", payload: { state: "ACCEPTED", player: name } });
-        }
-
-        function resetToIdleOrNext() {
+        // NUEVO: Reseteo sin recargar la página (Mantiene el audio activo)
+        function resetTVToIdle() {
             isPlaying = false;
-            // SI HAY GENTE EN COLA, PASA EL SIGUIENTE AUTOMÁTICAMENTE
+            document.getElementById('simon-board').style.display = 'none';
+            document.getElementById('fact-container').style.display = 'none';
+            
             if (queue.length > 0) {
-                acceptPlayer(queue.shift());
-                updateQueueBroadcast();
+                // Pasa el turno al siguiente
+                activePlayer = queue.shift();
+                document.getElementById('tv-player-name').innerText = activePlayer.name.toUpperCase();
+                showScreen('screen-scan-wait');
+                setTimeout(() => showScreen('screen-ready'), 2000); 
+                
+                channel.send({ type: "broadcast", event: "tv-state", payload: { state: "PLAYER_ACCEPTED", targetId: activePlayer.id } });
+                
+                // Actualizar números del resto de la cola
+                queue.forEach((p, idx) => {
+                    channel.send({ type: "broadcast", event: "tv-state", payload: { state: "QUEUE_UPDATE", targetId: p.id, position: idx + 1 } });
+                });
             } else {
+                // Nadie en espera, TV descansa
                 activePlayer = null;
-                playSound(sndBg); // Vuelve la música del lobby
                 showScreen('screen-idle');
+                sndBg.currentTime = 0;
+                sndBg.play().catch(e=>{});
             }
         }
 
-        function updateQueueBroadcast() {
-            queue.forEach((p, index) => {
-                channel.send({ type: "broadcast", event: "tv-state", payload: { state: "WAITLIST", player: p, position: index + 1 } });
-            });
-        }
-
-        // --- LÓGICA DEL JUEGO ---
         function startGame() {
             showScreen('screen-game');
             sequence = []; level = 0; factsSeen = 0; startTime = Date.now();
@@ -320,9 +304,9 @@
             document.getElementById('simon-board').style.display = 'none';
             factBox.style.display = "block";
             
-            playSound(sndFact);
+            sndFact.currentTime = 0; sndFact.play().catch(e=>{});
 
-            channel.send({ type: "broadcast", event: "tv-state", payload: { state: "BLOCKED", player: activePlayer } });
+            channel.send({ type: "broadcast", event: "tv-state", payload: { state: "BLOCKED", targetId: activePlayer.id } });
 
             let timeLeft = 5; timerText.innerText = timeLeft;
             const timer = setInterval(() => {
@@ -337,7 +321,7 @@
         }
 
         function playSequence() {
-            channel.send({ type: "broadcast", event: "tv-state", payload: { state: "WATCH", player: activePlayer } });
+            channel.send({ type: "broadcast", event: "tv-state", payload: { state: "WATCH", targetId: activePlayer.id } });
             let i = 0;
             const interval = setInterval(() => {
                 highlightColor(sequence[i]);
@@ -348,7 +332,7 @@
                         isPlaying = true;
                         document.getElementById('center-counter').innerText = sequence.length;
                         document.getElementById('center-counter').style.display = 'block';
-                        channel.send({ type: "broadcast", event: "tv-state", payload: { state: "PLAY", player: activePlayer } });
+                        channel.send({ type: "broadcast", event: "tv-state", payload: { state: "PLAY", targetId: activePlayer.id } });
                     }, 500);
                 }
             }, 800); 
@@ -356,7 +340,7 @@
 
         function highlightColor(hex) {
             const el = document.getElementById(colorIds[hex]);
-            playSound(sndColor);
+            sndColor.currentTime = 0; sndColor.play().catch(e=>{}); 
             el.classList.add("highlight");
             setTimeout(() => el.classList.remove("highlight"), 300); 
         }
@@ -388,7 +372,7 @@
             document.getElementById("res-facts").innerText = `${factsSeen} facts, interesting?`;
 
             showScreen('screen-gameover');
-            channel.send({ type: "broadcast", event: "tv-state", payload: { state: "GAMEOVER", player: activePlayer } });
+            channel.send({ type: "broadcast", event: "tv-state", payload: { state: "GAMEOVER", targetId: activePlayer.id } });
         }
     </script>
 </body>

@@ -18,10 +18,11 @@
         .active { display: flex; }
 
         .dynamic-btn { display: flex; align-items: center; justify-content: space-between; background: var(--c-green); padding: 10px 10px 10px 30px; border-radius: 50px; width: 80%; transition: background-color 0.5s; margin-top: 30px; }
-        .dynamic-btn input { background: transparent; border: none; color: black; font-size: 1.5rem; font-weight: bold; width: 70%; outline: none; text-transform: uppercase; }
+        .dynamic-btn input { background: transparent; border: none; color: black; font-size: 1.5rem; font-weight: bold; width: 70%; outline: none; }
         .dynamic-btn input::placeholder { color: rgba(0,0,0,0.5); }
         .circle-btn { background: white; color: black; border: none; width: 50px; height: 50px; border-radius: 50%; font-size: 1.5rem; display: flex; justify-content: center; align-items: center; cursor: pointer; font-weight: bold; }
         
+        /* Botones SCOREBOARD y menús */
         .menu-btn { background: white; color: black; border: none; padding: 20px; font-size: 1.5rem; font-weight: bold; border-radius: 30px; margin-top: 15px; width: 80%; cursor: pointer; text-transform: uppercase; }
         .menu-btn.green { background: var(--c-green); color: black; }
         .menu-btn.blue { background: var(--c-blue); color: white; }
@@ -49,20 +50,16 @@
         <p id="status-msg" style="color: #aaa; margin-top: 20px;">Waiting for server...</p>
     </div>
 
-    <div id="screen-loading" class="screen" style="background: black;">
-        <h2 style="color: var(--c-blue); font-size: 3rem;">CONNECTING...</h2>
-    </div>
-
-    <div id="screen-waitlist" class="screen" style="background: black;">
-        <h2 style="color: var(--c-yellow); font-size: 3.5rem; margin-bottom: 0;">QUEUE</h2>
-        <p style="font-size: 1.5rem; color: #aaa;">Someone is playing right now.</p>
-        <p style="font-size: 2.5rem; margin-top: 40px;">Position: <span id="waitlist-pos" style="color: var(--c-green); font-weight: bold; font-size: 4rem;">1</span></p>
-        <button class="menu-btn" style="background: var(--c-red); color: white; margin-top: 50px;" onclick="exitGame()">LEAVE QUEUE</button>
+    <div id="screen-queue" class="screen" style="background: black;">
+        <h2 style="color: var(--c-yellow); font-size: 3rem; margin-bottom: 10px;">WAITING LIST</h2>
+        <p style="font-size: 1.5rem; margin-bottom: 40px; padding: 0 20px;">Another player is currently testing their attention.</p>
+        <h1 id="queue-position" style="font-size: 4rem; color: white;">You are #1</h1>
+        <button class="menu-btn red" style="background: var(--c-red); color: white; margin-top: 40px;" onclick="exitGame()">LEAVE QUEUE</button>
     </div>
 
     <div id="screen-start" class="screen" style="background: black;">
         <h2 id="player-name-display" style="font-size: 2.5rem; color: white;">Player name</h2>
-        <button class="menu-btn" style="background: transparent; color: white; border: 3px solid white; margin-top: 50px;" onclick="sendStart()">START</button>
+        <button class="menu-btn" style="background: transparent; color: white; border: 3px solid white; margin-top: 50px;" onclick="startGame()">START</button>
     </div>
 
     <div id="screen-block" class="screen" style="background-color: #000; z-index: 200">
@@ -81,8 +78,8 @@
     <div id="screen-gameover" class="screen" style="background: black; justify-content: flex-start; padding-top: 20%;">
         <h1 style="color: var(--c-red); font-size: 5rem; margin-bottom: 40px; line-height: 1; margin-top: 0;">YOU<br>LOSE</h1>
         <button class="menu-btn green" onclick="requestMenu('EXTRA_INFO_REQ')">EXTRA INFO</button>
-        <button class="menu-btn blue" onclick="sendStart()">TRY AGAIN</button>
-        <button class="menu-btn" style="background: white; color: black;" onclick="requestMenu('SCOREBOARD_REQ')">SCOREBOARD</button>
+        <button class="menu-btn blue" onclick="startGame()">TRY AGAIN</button>
+        <button class="menu-btn" style="background: white;" onclick="requestMenu('SCOREBOARD_REQ')">SCOREBOARD</button>
         <button class="menu-btn yellow" style="margin-top: 40px;" onclick="exitGame()">EXIT</button>
     </div>
 
@@ -90,11 +87,14 @@
         <h2 style="color: var(--c-red); font-size: 4rem; margin-bottom: 0;">YOU'RE</h2>
         <h2 style="color: var(--c-red); font-size: 4rem; margin-top: 0; margin-bottom: 40px;">THE #8</h2>
         <button class="menu-btn green" onclick="requestMenu('EXTRA_INFO_REQ')">EXTRA INFO</button>
-        <button class="menu-btn blue" onclick="sendStart()">TRY AGAIN</button>
+        <button class="menu-btn blue" onclick="startGame()">TRY AGAIN</button>
         <button class="menu-btn yellow" style="margin-top: 40px;" onclick="exitGame()">EXIT</button>
     </div>
 
     <script>
+        // GENERAR UN ID ÚNICO PARA ESTE MÓVIL
+        const myId = Math.random().toString(36).substring(2, 10);
+
         const colors = ['#1ad872', '#f9432d', '#efd828', '#27a4e4'];
         let colorIdx = 0;
         setInterval(() => {
@@ -109,8 +109,6 @@
         const clienteSupabase = window.supabase.createClient(supabaseUrl, supabaseKey);
         const channel = clienteSupabase.channel("simon-sync");
 
-        let myName = ""; // Variable vital para saber quién soy
-
         function showScreen(id) {
             document.querySelectorAll(".screen").forEach((s) => s.classList.remove("active"));
             document.getElementById("game-grid").style.display = "none";
@@ -123,57 +121,52 @@
         }
 
         function joinGame() {
-            const nameInput = document.getElementById("nickname-input").value.trim();
-            if(nameInput.length < 2) return;
+            const name = document.getElementById("nickname-input").value.trim() || "Player";
+            document.getElementById("player-name-display").innerText = name;
             
-            myName = nameInput.toUpperCase(); // Guardamos nuestro nombre
-            document.getElementById("player-name-display").innerText = myName;
-            
-            channel.send({ type: "broadcast", event: "mobile-action", payload: { action: "JOIN", value: myName } });
-            showScreen("screen-loading"); // Pantalla de transición mientras la TV responde
+            // Mandamos el JOIN con nuestro ID secreto
+            channel.send({ type: "broadcast", event: "mobile-action", payload: { action: "JOIN", value: name, id: myId } });
         }
 
-        function sendStart() {
-            channel.send({ type: "broadcast", event: "mobile-action", payload: { action: "START", value: myName } });
+        function startGame() {
+            channel.send({ type: "broadcast", event: "mobile-action", payload: { action: "START", id: myId } });
         }
 
         function requestMenu(actionType) {
-            channel.send({ type: "broadcast", event: "mobile-action", payload: { action: actionType, value: myName } });
+            channel.send({ type: "broadcast", event: "mobile-action", payload: { action: actionType, id: myId } });
             if(actionType === 'SCOREBOARD_REQ') showScreen("screen-rank");
         }
 
         let ultimoToque = 0;
         function sendTap(hex) {
             const ahora = Date.now();
-            if (ahora - ultimoToque < 500) return; // Bloqueo de medio segundo
+            if (ahora - ultimoToque < 500) return;
             ultimoToque = ahora;
 
-            channel.send({ type: "broadcast", event: "mobile-action", payload: { action: "TAP", value: { player: myName, hex: hex } } });
+            channel.send({ type: "broadcast", event: "mobile-action", payload: { action: "TAP", value: hex, id: myId } });
         }
 
         function exitGame() {
-            channel.send({ type: "broadcast", event: "mobile-action", payload: { action: "EXIT", value: myName } });
-            
-            // RESET LOCAL (No recargamos la página)
-            myName = "";
-            document.getElementById("nickname-input").value = "";
-            showScreen("screen-login");
+            channel.send({ type: "broadcast", event: "mobile-action", payload: { action: "EXIT", id: myId } });
+            location.reload(); // El móvil sí se recarga para borrar el Nickname del usuario anterior
         }
 
-        // ESCUCHAMOS A LA TELEVISIÓN
+        // ESCUCHAR A LA TV
         channel
             .on("broadcast", { event: "tv-state" }, (data) => {
                 const state = data.payload.state;
-                const targetPlayer = data.payload.player;
+                const targetId = data.payload.targetId;
 
-                // SI EL MENSAJE NO ES PARA MI, LO IGNORO (Vital para la lista de espera)
-                if (targetPlayer && targetPlayer !== myName) return;
+                // SISTEMA DE COLAS: Ignorar los mensajes de la TV si van dirigidos a otro teléfono
+                if (targetId && targetId !== myId) return;
 
-                if (state === "ACCEPTED") {
+                if (state === "PLAYER_ACCEPTED") {
                     showScreen("screen-start");
-                } else if (state === "WAITLIST") {
-                    document.getElementById("waitlist-pos").innerText = data.payload.position;
-                    showScreen("screen-waitlist");
+                } else if (state === "PLAYER_QUEUED") {
+                    document.getElementById("queue-position").innerText = "You are #" + data.payload.position;
+                    showScreen("screen-queue");
+                } else if (state === "QUEUE_UPDATE") {
+                    document.getElementById("queue-position").innerText = "You are #" + data.payload.position;
                 } else if (state === "BLOCKED") {
                     document.getElementById("block-title").innerText = "LOOK AT\nTHE TV";
                     document.getElementById("block-desc").innerText = "Read the fact";
