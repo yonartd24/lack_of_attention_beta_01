@@ -1,330 +1,314 @@
 <!doctype html>
 <html lang="en">
-    <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>TV - Brain Drain</title>
-        <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-        <style>
-            body { margin: 0; font-family: "Helvetica Neue", Arial, sans-serif; background-color: #1a1a1a; color: white; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; transition: background-color 0.2s; }
-            .screen { display: none; text-align: center; width: 100%; padding: 20px; box-sizing: border-box; }
-            .active { display: block; }
-            h1 { font-size: 4rem; margin-bottom: 10px; }
-            p { font-size: 1.5rem; color: #aaa; }
-            
-            #simon-board { display: grid; grid-template-columns: 1fr 1fr; width: 80vh; height: 80vh; gap: 10px; margin: 0 auto; display: none; }
-            .simon-color { border-radius: 20px; opacity: 0.3; transition: opacity 0.15s; } 
-            .simon-color.highlight { opacity: 1; box-shadow: 0 0 30px rgba(255, 255, 255, 0.8); }
-            
-            #fact-container { position: absolute; background: rgba(0, 0, 0, 0.9); padding: 40px; border-radius: 20px; border: 2px solid white; max-width: 60%; z-index: 50; display: none; }
-            #fact-text { font-size: 2.5rem; line-height: 1.4; margin-bottom: 20px; }
-            #tv-timer { font-size: 4rem; font-weight: bold; color: #ff3b30; }
-            
-            .notification { position: absolute; padding: 15px 25px; border-radius: 15px; font-weight: bold; font-size: 1.2rem; color: white; box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5); z-index: 100; animation: float 3s infinite alternate; pointer-events: none; }
-            @keyframes float { from { transform: translateY(0); } to { transform: translateY(-20px); } }
-        </style>
-    </head>
-    <body>
-        <div id="screen-wait" class="screen active">
-            <h1>⬅️ SCAN TO PLAY</h1>
-            <p>Is your attention for sale?</p>
-            <p id="tv-status" style="color: #00ff00; font-family: monospace; font-size: 1rem; margin-top: 20px">Waiting for server connection...</p>
-        </div>
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TV - Brain Drain</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --c-green: #1ad872;
+            --c-red: #f9432d;
+            --c-yellow: #efd828;
+            --c-blue: #27a4e4;
+        }
+        body { margin: 0; font-family: "Helvetica Neue", Arial, sans-serif; background-color: #1a1a1a; color: white; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; transition: background-color 0.5s, color 0.5s; }
+        .screen { display: none; text-align: center; width: 100%; height: 100%; padding: 20px; box-sizing: border-box; flex-direction: column; justify-content: center; align-items: center; }
+        .active { display: flex; }
+        
+        h1 { font-size: 5rem; margin-bottom: 10px; text-transform: uppercase; }
+        p { font-size: 2rem; font-weight: bold; }
+        
+        .bouncing-arrow { font-size: 4rem; animation: bounce 1.5s ease-in-out infinite; margin-top: 20px; }
+        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(20px); } }
 
+        /* SIMON BOARD */
+        #simon-board { display: none; grid-template-columns: 1fr 1fr; width: 90vh; height: 90vh; gap: 15px; position: relative; }
+        .simon-color { border-radius: 20px; filter: blur(10px); opacity: 0.6; transition: all 0.2s ease; }
+        .simon-color.highlight { filter: blur(0px); opacity: 1; transform: scale(1.02); }
+        
+        #tv-green { background-color: var(--c-green); } #tv-green.highlight { box-shadow: 0 0 50px var(--c-green); }
+        #tv-red { background-color: var(--c-red); } #tv-red.highlight { box-shadow: 0 0 50px var(--c-red); }
+        #tv-yellow { background-color: var(--c-yellow); } #tv-yellow.highlight { box-shadow: 0 0 50px var(--c-yellow); }
+        #tv-blue { background-color: var(--c-blue); } #tv-blue.highlight { box-shadow: 0 0 50px var(--c-blue); }
+        
+        #center-counter { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 5rem; font-weight: bold; color: white; text-shadow: 0 0 20px rgba(0,0,0,0.8); z-index: 10; display: none; pointer-events: none; }
+
+        /* FACTS */
+        #fact-container { background: var(--c-red); padding: 50px; border-radius: 30px; max-width: 70%; z-index: 50; display: none; color: black; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
+        #fact-text { font-size: 3rem; line-height: 1.2; font-weight: bold; margin-bottom: 30px; }
+        #tv-timer { font-size: 5rem; font-weight: 900; background: rgba(255,255,255,0.8); border-radius: 20px; display: inline-block; padding: 10px 40px; }
+        
+        /* DATA SCREENS */
+        .data-screen { background: black; color: white; width: 100%; height: 100%; }
+        .data-screen h1 { color: var(--c-red); }
+        .data-row { font-size: 2rem; margin: 15px 0; }
+        #chart-img { max-width: 80%; max-height: 60vh; }
+
+        /* INITIAL OVERLAY FOR AUDIO */
+        #audio-overlay { position: fixed; top:0; left:0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.9); z-index: 9999; display: flex; justify-content: center; align-items: center; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+    <div id="audio-overlay" onclick="initExperience()">
+        <h1 style="color: white; border: 2px solid white; padding: 20px;">CLICK HERE TO START EXPERIENCE</h1>
+    </div>
+
+    <div id="screen-idle" class="screen">
+        <h1>ATTENTION TEST</h1>
+        <p>SCAN TO START</p>
+        <div class="bouncing-arrow">↓</div>
+    </div>
+
+    <div id="screen-scan-wait" class="screen" style="background: black;">
+        <h1 id="text-look-phone">LOOK AT<br>YOUR PHONE</h1>
+    </div>
+
+    <div id="screen-ready" class="screen" style="background: black;">
+        <p style="font-size: 3rem;">PLAYER</p>
+        <h1 id="text-player-ready">IS READY TO PLAY</h1>
+    </div>
+
+    <div id="screen-game" class="screen" style="background: black; flex-direction: row;">
         <div id="simon-board">
-            <div id="tv-green" class="simon-color" style="background: #34c759"></div>
-            <div id="tv-red" class="simon-color" style="background: #ff3b30"></div>
-            <div id="tv-yellow" class="simon-color" style="background: #ffcc00"></div>
-            <div id="tv-blue" class="simon-color" style="background: #007aff"></div>
+            <div id="tv-green" class="simon-color"></div>
+            <div id="tv-red" class="simon-color"></div>
+            <div id="tv-yellow" class="simon-color"></div>
+            <div id="tv-blue" class="simon-color"></div>
+            <div id="center-counter">0</div>
         </div>
-
         <div id="fact-container">
             <div id="fact-text">Did you know?</div>
             <div id="tv-timer">5</div>
         </div>
+    </div>
 
-        <div id="screen-gameover" class="screen">
-            <h1 style="color: #ff3b30">ATTENTION DRAINED</h1>
-            <div style="font-size: 2rem; margin-top: 30px">
-                <p>Time Focused: <span id="res-time" style="color: white">0</span>s</p>
-                <p>Colors Memorized: <span id="res-colors" style="color: white">0</span></p>
-                <p>Facts Learned: <span id="res-facts" style="color: white">0</span></p>
-            </div>
-            <p style="margin-top: 40px; font-size: 1.2rem">Check your phone to continue</p>
+    <div id="screen-gameover" class="screen data-screen">
+        <h1>YOU LOSE</h1>
+        <div class="data-row">ATTENTION TIME<br><span id="res-time" style="color:#aaa;">0:00 minutes</span></div>
+        <div class="data-row">COLORS MEMORIZED<br><span id="res-colors" style="color:#aaa;">0 colors, good job!</span></div>
+        <div class="data-row">FACTS READED<br><span id="res-facts" style="color:#aaa;">0 facts, interesting?</span></div>
+        <div class="data-row">AVERAGE SCORE<br><span style="color:#aaa;">5 colors, you're locked in!</span></div>
+    </div>
+
+    <div id="screen-scoreboard" class="screen data-screen">
+        <h1 style="color: white; margin-bottom: 40px;">SCOREBOARD</h1>
+        <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 20px; width: 90%;">
+            <div><h2 style="color: var(--c-green);">#1</h2><p>Player 1</p></div>
+            <div><h2 style="color: var(--c-yellow);">#2</h2><p>Player 2</p></div>
+            <div><h2 style="color: var(--c-blue);">#3</h2><p>Player 3</p></div>
+            <div><h2 style="color: white;">#4</h2><p>Player 4</p></div>
+            <div><h2 style="color: white;">#5</h2><p>Player 5</p></div>
         </div>
+    </div>
 
-        <script>
-            const supabaseUrl = "https://hpmmzyfxchqlazxkbrym.supabase.co";
-            const supabaseKey = "sb_publishable_z7XELKJhbVvNwnB1iIJq9g_7-CvO-rb";
-            const clienteSupabase = window.supabase.createClient(supabaseUrl, supabaseKey);
-            const channel = clienteSupabase.channel("simon-sync");
+    <div id="screen-extrainfo" class="screen data-screen">
+        <img id="chart-img" src="charts/chart_1.svg" alt="Extra Info Chart" onerror="this.style.display='none'">
+        <p style="margin-top: 20px; color: #aaa;">Look at your phone to return</p>
+    </div>
 
-            const facts = [
-                `Avondale Middle School recorded a 68% reduction in physical fighting after removing phones.`,
-                `Michigan pilot districts saw a 51% decrease in phone violations following the ban.`,
-                `Removing phones is equivalent to adding 5 extra days of learning to the school year.`,
-                `Norwegian middle schools experienced a significant decline in bullying incidents after phone restrictions.`,
-                `Regional smartphone bans in Spain led to a 15-18% reduction in school bullying.`,
-                `Michigan high school students receive an average of 100 notifications daily.`,
-                `It can take a student 20 minutes to refocus on learning after checking a single message.`,
-                `A single smartphone notification disrupts concentration for roughly 7 seconds.`,
-                `Seventy percent of principals reported a positive impact on school climate after banning phones.`,
-                `Sixty-seven percent of school leaders cited a reduction in inappropriate phone use inside buildings.`,
-                `Fifty-four percent of principals observed a drop in cyberbullying from within the school.`,
-                `Implementing a ban led to a 30% spike in suspensions for Black students during the adjustment year.`,
-                `Florida test scores improved by 1.1 percentiles in the second year of a statewide ban.`,
-                `Male students in Florida saw a 1.4 percentile gain in test scores after the ban.`,
-                `Prohibiting phones in the UK was linked to a 6.4% increase in national exam scores.`,
-                `Grades in phone-free college classrooms rose by 0.07 standard deviations.`,
-                `Low-achieving students in college saw double the average grade uplift in phone-free rooms.`,
-                `Removing phones is equivalent to providing one hour of additional instruction per week.`,
-                `Seventy-five percent of Dutch educators reported that bans improved student concentration.`,
-                `Fifty-nine percent of teachers in the Netherlands noted a better learning environment post-ban.`,
-                `In Norway, middle school phone bans significantly improved the GPA of girls.`,
-                `Eighty-one percent of teachers agreed that a ban improves student academic performance.`,
-                `Students without smartphones performed significantly better on attention and processing speed tests.`,
-                `Higher test scores were found specifically in Spanish regions that adopted phone bans.`,
-                `Ninety-seven percent of teens report using their smartphones during school hours.`,
-                `Half of students receive more than 237 notifications on a typical day.`,
-                `One in three students will migrate their digital distractions to laptops if phones are banned.`,
-                `Physical distance from a phone is required to fully escape its cognitive pull.`,
-                `Using a phone for socialization motives is strongly associated with academic decline.`,
-                `Self-reported study quality is significantly higher when students are not using smartphones.`,
-                `Seventy-two percent of high school teachers call phones a major barrier to teaching.`,
-                `One hundred percent of teachers in a Marietta academy agreed bans improved classroom management.`,
-                `Eighty-eight percent of youth support classroom bans specifically to reduce distractions.`,
-                `Only one in ten students supports a "bell-to-bell" all-day phone policy.`,
-                `Sixty-eight percent of U.S. adults support banning phone use during class time.`,
-                `Seventy-four percent of parents support prohibiting phones during instructional time.`,
-                `In Maryland, 88% of principals reported reduced distractions after strict policies were set.`,
-                `Three out of four teachers in elementary schools reported having a bell-to-bell ban.`,
-                `Forty-six percent of students believe they should learn to use phones responsibly rather than ban them.`,
-                `Eighty-one percent of youth believe parents should be able to reach them during school.`,
-                `By 2026, 58% of all monitored nations had implemented national school phone policies.`,
-                `Policy adoption for phone bans increased by 150% between 2023 and 2026.`,
-                `As of 2026, 44 U.S. states have taken formal action to address school smartphone use.`,
-                `Michigan ranks 44th in the nation for education proficiency.`,
-                `Over 50% of Michigan 3rd-grade students fail to meet reading proficiency levels.`,
-                `Thirty-one U.S. states required districts to limit or ban phones by October 2025.`,
-                `Twenty-two states have enacted "bell-to-bell" bans for the entire school day.`,
-                `Sixteen countries are currently in active discussions to introduce national phone bans.`,
-                `The UNESCO GEM report found that one-quarter of countries had phone laws in place by 2023.`,
-                `New York's budget allocated $13.5 million to help schools purchase phone storage solutions.`,
-                `Moderate physical activity among Danish students increased significantly after a recess phone ban.`,
-                `The frequency of physical activity during recess rose by 37% (odds ratio 1.37) post-ban.`,
-                `Attendance at after-school sporting events jumped 50% at KIPP NYC after the ban.`,
-                `Nearly 1 in 6 Michigan teens report suffering from clinical anxiety or depression.`,
-                `Seventy-two percent of school leaders believe phones have a negative impact on mental health.`,
-                `Students who spend over three hours on social media are twice as likely to be depressed.`,
-                `Eighty-one percent of students noticed a negative change in their study habits after getting a phone.`,
-                `Sleep deprivation is experienced by 48.7% of students who use phones excessively.`,
-                `A Gamma value of -0.09 confirms that excessive entertainment use on phones harms grades.`,
-                `Sixty-six percent of students identified social media notifications as their biggest study distraction.`,
-                `A magnetic pouch system costs an average of $25 to $30 per student.`,
-                `Nearly half of schools currently use a "no-show" policy where phones stay in pockets.`,
-                `Centralized storage in lockers or pouches is linked to more focused classrooms than pocket storage.`,
-                `Florida unexcused absences dropped significantly, accounting for half of the test score gains.`,
-                `Eighty-three percent of NEA members support prohibiting personal device use for the entire day.`,
-                `Ninety-five percent of college students bring their smartphones to every class.`,
-                `Eighty-six percent of students believe smartphones facilitate the acquisition of learning materials.`,
-                `One in three students in statistics programs used phones more than 6 hours a day.`,
-                `Students using phones in lectures took fewer and less detailed notes.`,
-                `One hundred million dollars was allocated in Pennsylvania to help schools purchase phone pouches.`,
-                `75% of adults globally now support some form of a school cellphone ban.`,
-                `60% of teachers say students now use smartwatches to text and play games during class.`,
-                `94% of adults in advanced economies now own a smartphone.`,
-                `50% of teachers believe smartwatches have replaced phones as the primary classroom distraction.`,
-                `In Florida, suspensions for Black students rose by 30% during the first year of the ban.`,
-                `Male students in Florida saw a large increase in disciplinary incidents while females saw none.`,
-                `77% of public schools currently prohibit student phone use during any class.`,
-                `86% of elementary schools have phone policies compared to just 55% of high schools.`,
-                `30% of schools prohibit phone use both during class and during free periods.`,
-                `53% of school leaders report negative impacts of phone use on academic performance.`,
-                `73% of school leaders say phones have damaged students' attention spans.`,
-                `Students with honours results above 3.70 typically spend only 1-2 hours on social media.`,
-                `85.7% of participants in a cross-sectional study showed a high level of daily phone use.`,
-                `66.4% of high-usage students exhibited low academic performance in recent testing.`,
-                `43% of students report using their phones 1-10 times during every class period.`,
-                `28.3% of nursing students report using their phones more than 30 times per session.`,
-                `Average screen time for people aged 15-24 in the U.S. is approximately 7 hours daily.`,
-                `Text messaging and short-form videos act as bridge nodes connecting screen time to lower grades.`,
-                `97.6% of medical students in a Mexican cohort reported owning a smartphone.`,
-                `First-year students notch the biggest improvements when phones are removed from the classroom.`,
-                `Batching notifications three times a day significantly reduces stress and negative affect.`,
-                `Never receiving notifications increased anxiety levels by a Cohen’s d of 0.56.`,
-                `Average attention span dropped from 12 seconds in 2000 to just 8 seconds in recent years.`,
-                `Sixty-three percent of college students spend 2-4 hours per day on short-form videos.`,
-                `43.3% of students screened positive for ADHD-like symptoms in high-screen-time groups.`,
-                `Course comprehension was significantly higher for students whose phones were physically removed.`,
-                `Eighty-one percent of teachers agree that bans improve overall student behavior.`,
-                `Danish schools observed that vigorous physical activity decreased during recess phone bans.`,
-                `76% of U.S. schools banned non-academic phone use during the 2021-22 school year.`,
-                `The "brain drain" effect returns the moment a phone re-enters the environment.`
-            ];
+    <script>
+        // --- AUDIO SETUP ---
+        const audioBg = new Audio('sounds/waiting_room_song.mp3'); audioBg.loop = true;
+        const audioColor = new Audio('sounds/sound_1.mp3');
+        const audioStart = new Audio('sounds/sound_2.mp3');
+        const audioFact = new Audio('sounds/sound_4.mp3');
 
-            let sequence = [];
-            let playerStep = 0;
-            let level = 0;
-            let factsSeen = 0;
-            let startTime = 0;
-            let isPlaying = false;
-            let distractionInterval;
-            const colors = ["#34C759", "#FF3B30", "#FFCC00", "#007AFF"];
-            const colorIds = { "#34C759": "tv-green", "#FF3B30": "tv-red", "#FFCC00": "tv-yellow", "#007AFF": "tv-blue" };
+        function initExperience() {
+            document.getElementById('audio-overlay').style.display = 'none';
+            audioBg.play().catch(e => console.log("Audio play failed", e));
+            showScreen('screen-idle');
+        }
 
-            channel.subscribe((status) => {
-                if (status === "SUBSCRIBED") {
-                    document.getElementById("tv-status").innerText = "System Online. Ready to sync.";
-                }
-            });
-
-            channel.on("broadcast", { event: "mobile-action" }, (data) => {
-                const action = data.payload.action;
-                const value = data.payload.value;
-
-                if (action === "JOIN") {
-                    document.getElementById("screen-wait").innerHTML = `<h1>${value} IS READY</h1><p>Look at your phone to start</p>`;
-                } else if (action === "START") {
-                    startGame();
-                } else if (action === "TAP" && isPlaying) {
-                    checkPlayerInput(value);
-                } else if (action === "EXIT") {
-                    location.reload();
-                }
-            });
-
-            function startGame() {
-                document.getElementById("screen-wait").classList.remove("active");
-                document.getElementById("screen-gameover").classList.remove("active");
-                document.getElementById("simon-board").style.display = "grid";
-
-                sequence = [];
-                level = 0;
-                factsSeen = 0;
-                startTime = Date.now();
-                nextRound();
+        // --- CYCLE COLORS LOGIC ---
+        const colors = ['#1ad872', '#f9432d', '#efd828', '#27a4e4'];
+        let colorIdx = 0;
+        
+        setInterval(() => {
+            colorIdx = (colorIdx + 1) % colors.length;
+            const c = colors[colorIdx];
+            
+            // IDLE Screen (Background changes)
+            if(document.getElementById('screen-idle').classList.contains('active')) {
+                document.body.style.backgroundColor = c;
+            } else {
+                document.body.style.backgroundColor = 'black';
             }
+            
+            // SCAN WAIT / READY (Text changes)
+            document.getElementById('text-look-phone').style.color = c;
+            document.getElementById('text-player-ready').style.color = c;
+        }, 2000);
 
-            function nextRound() {
-                level++;
-                playerStep = 0;
-                sequence.push(colors[Math.floor(Math.random() * colors.length)]);
-                isPlaying = false;
+        // --- SUPABASE ---
+        const supabaseUrl = "https://hpmmzyfxchqlazxkbrym.supabase.co";
+        const supabaseKey = "sb_publishable_z7XELKJhbVvNwnB1iIJq9g_7-CvO-rb";
+        const clienteSupabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+        const channel = clienteSupabase.channel("simon-sync").subscribe();
 
-                let showFact = false;
+        // --- GAME VARIABLES ---
+        const facts = [
+            "Avondale Middle School recorded a 68% reduction in physical fighting after removing phones.",
+            "Removing phones is equivalent to adding 5 extra days of learning to the school year.",
+            "Michigan high school students receive an average of 100 notifications daily.",
+            "It can take a student 20 minutes to refocus on learning after checking a single message."
+        ];
+        
+        let sequence = [];
+        let playerStep = 0;
+        let level = 0;
+        let factsSeen = 0;
+        let startTime = 0;
+        let isPlaying = false;
+        let lastColorHex = '#f9432d';
+        const colorIds = { '#1ad872': 'tv-green', '#f9432d': 'tv-red', '#efd828': 'tv-yellow', '#27a4e4': 'tv-blue' };
+
+        // --- NAVIGATION ---
+        function showScreen(id) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            
+            if(id === 'screen-game') {
+                document.getElementById('simon-board').style.display = 'grid';
+            } else {
+                document.getElementById('simon-board').style.display = 'none';
+            }
+        }
+
+        // --- NETWORK LISTENER ---
+        channel.on("broadcast", { event: "mobile-action" }, (data) => {
+            const action = data.payload.action;
+            const value = data.payload.value;
+
+            if (action === "JOIN") {
+                audioBg.pause(); // Para la música del lobby
+                showScreen('screen-scan-wait');
+                setTimeout(() => showScreen('screen-ready'), 2000); // Salta al READY automáticamente
+            } else if (action === "START" || action === "TRY_AGAIN") {
+                audioStart.currentTime = 0; audioStart.play();
+                startGame();
+            } else if (action === "TAP" && isPlaying) {
+                checkPlayerInput(value);
+            } else if (action === "SCOREBOARD_REQ") {
+                showScreen('screen-scoreboard');
+            } else if (action === "EXTRA_INFO_REQ") {
+                document.getElementById('chart-img').src = `charts/chart_${Math.floor(Math.random()*3)+1}.svg`;
+                showScreen('screen-extrainfo');
+            } else if (action === "EXIT") {
+                location.reload();
+            }
+        });
+
+        // --- GAME LOGIC ---
+        function startGame() {
+            showScreen('screen-game');
+            sequence = []; level = 0; factsSeen = 0; startTime = Date.now();
+            document.getElementById('center-counter').style.display = 'none';
+            
+            // 2 Segundos de margen como pediste en el PDF
+            setTimeout(nextRound, 2000);
+        }
+
+        function nextRound() {
+            level++; playerStep = 0;
+            const nextHex = colors[Math.floor(Math.random() * colors.length)];
+            sequence.push(nextHex);
+            lastColorHex = nextHex; // Guardamos el último color para el Fact Box
+            isPlaying = false;
+            document.getElementById('center-counter').style.display = 'none';
+
+            let showFact = (level > 1 && level <= 6) || (level > 6 && level % 5 === 0);
+
+            if (showFact) {
+                factsSeen++;
+                displayFactAndBlock();
+            } else {
+                setTimeout(playSequence, 500);
+            }
+        }
+
+        function displayFactAndBlock() {
+            const factBox = document.getElementById("fact-container");
+            const timerText = document.getElementById("tv-timer");
+            
+            // El color de la caja de fact es igual al último color
+            factBox.style.backgroundColor = lastColorHex;
+            document.getElementById("fact-text").innerText = facts[Math.floor(Math.random() * facts.length)];
+            
+            document.getElementById('simon-board').style.display = 'none';
+            factBox.style.display = "block";
+            audioFact.currentTime = 0; audioFact.play();
+
+            channel.send({ type: "broadcast", event: "tv-state", payload: { state: "BLOCKED" } });
+
+            let timeLeft = 5; timerText.innerText = timeLeft;
+            const timer = setInterval(() => {
+                timeLeft--; timerText.innerText = timeLeft;
+                if (timeLeft <= 0) {
+                    clearInterval(timer);
+                    factBox.style.display = "none";
+                    document.getElementById('simon-board').style.display = 'grid';
+                    playSequence();
+                }
+            }, 1000);
+        }
+
+        function playSequence() {
+            channel.send({ type: "broadcast", event: "tv-state", payload: { state: "WATCH" } });
+            let i = 0;
+            const interval = setInterval(() => {
+                highlightColor(sequence[i]);
+                i++;
+                if (i >= sequence.length) {
+                    clearInterval(interval);
+                    setTimeout(() => {
+                        isPlaying = true;
+                        // Mostramos el contador en el centro
+                        document.getElementById('center-counter').innerText = sequence.length;
+                        document.getElementById('center-counter').style.display = 'block';
+                        channel.send({ type: "broadcast", event: "tv-state", payload: { state: "PLAY" } });
+                    }, 500);
+                }
+            }, 800); 
+        }
+
+        function highlightColor(hex) {
+            const el = document.getElementById(colorIds[hex]);
+            audioColor.currentTime = 0; audioColor.play();
+            el.classList.add("highlight");
+            setTimeout(() => el.classList.remove("highlight"), 300); 
+        }
+
+        function checkPlayerInput(colorTapped) {
+            highlightColor(colorTapped);
+            if (colorTapped === sequence[playerStep]) {
+                playerStep++;
+                document.getElementById('center-counter').innerText = sequence.length - playerStep;
                 
-                if (level > 1 && level <= 6) {
-                    showFact = true;
-                } else if (level > 6 && level % 5 === 0) {
-                    showFact = true;
+                if (playerStep === sequence.length) {
+                    isPlaying = false;
+                    document.getElementById('center-counter').style.display = 'none';
+                    setTimeout(nextRound, 800); 
                 }
-
-                if (showFact) {
-                    factsSeen++;
-                    displayFactAndBlock();
-                } else {
-                    setTimeout(playSequence, 500); 
-                }
-
-                if (level === 5 && !distractionInterval) {
-                    distractionInterval = setInterval(spawnDistraction, 3000);
-                }
+            } else {
+                gameOver();
             }
+        }
 
-            function displayFactAndBlock() {
-                const factBox = document.getElementById("fact-container");
-                const timerText = document.getElementById("tv-timer");
+        function gameOver() {
+            isPlaying = false;
+            const totalSecs = Math.floor((Date.now() - startTime) / 1000);
+            const mins = Math.floor(totalSecs / 60);
+            const secs = totalSecs % 60;
+            
+            document.getElementById("res-time").innerText = `${mins}:${secs < 10 ? '0' : ''}${secs} minutes`;
+            document.getElementById("res-colors").innerText = `${level - 1} colors, good job!`;
+            document.getElementById("res-facts").innerText = `${factsSeen} facts, interesting?`;
 
-                document.getElementById("fact-text").innerText = facts[Math.floor(Math.random() * facts.length)];
-                factBox.style.display = "block";
-
-                channel.send({ type: "broadcast", event: "tv-state", payload: { state: "BLOCKED" } });
-
-                let timeLeft = 5; 
-                timerText.innerText = timeLeft;
-
-                const timer = setInterval(() => {
-                    timeLeft--;
-                    timerText.innerText = timeLeft;
-                    if (timeLeft <= 0) {
-                        clearInterval(timer);
-                        factBox.style.display = "none";
-                        playSequence();
-                    }
-                }, 1000);
-            }
-
-            function playSequence() {
-                channel.send({ type: "broadcast", event: "tv-state", payload: { state: "WATCH" } });
-                let i = 0;
-                const interval = setInterval(() => {
-                    highlightColor(sequence[i]);
-                    i++;
-                    if (i >= sequence.length) {
-                        clearInterval(interval);
-                        setTimeout(() => {
-                            isPlaying = true;
-                            channel.send({ type: "broadcast", event: "tv-state", payload: { state: "PLAY" } });
-                        }, 300);
-                    }
-                }, 500); 
-            }
-
-            function highlightColor(hex) {
-                const el = document.getElementById(colorIds[hex]);
-                el.classList.add("highlight");
-                setTimeout(() => el.classList.remove("highlight"), 250); 
-            }
-
-            function checkPlayerInput(colorTapped) {
-                highlightColor(colorTapped);
-                if (colorTapped === sequence[playerStep]) {
-                    playerStep++;
-                    if (playerStep === sequence.length) {
-                        isPlaying = false;
-                        setTimeout(nextRound, 800); 
-                    }
-                } else {
-                    gameOver();
-                }
-            }
-
-            function spawnDistraction() {
-                if (!isPlaying) return;
-
-                const currentNotifs = document.querySelectorAll(".notification");
-                if (currentNotifs.length > 3) return;
-
-                const notif = document.createElement("div");
-                notif.className = "notification";
-                notif.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
-                notif.style.top = Math.random() * 80 + "%";
-                notif.style.left = Math.random() * 80 + "%";
-
-                const texts = ["New Like!", "Trending Topic", "Missed Call", "System Update", "Battery Low", "Storage Full", "New Follower"];
-                notif.innerText = texts[Math.floor(Math.random() * texts.length)];
-
-                document.body.appendChild(notif);
-
-                setTimeout(() => notif.remove(), 3000);
-            }
-
-            function gameOver() {
-                isPlaying = false;
-                clearInterval(distractionInterval);
-                document.querySelectorAll(".notification").forEach((e) => e.remove());
-
-                const totalTime = Math.floor((Date.now() - startTime) / 1000);
-
-                document.getElementById("simon-board").style.display = "none";
-                document.getElementById("screen-gameover").classList.add("active");
-
-                document.getElementById("res-time").innerText = totalTime;
-                document.getElementById("res-colors").innerText = level - 1;
-                document.getElementById("res-facts").innerText = factsSeen;
-
-                channel.send({ type: "broadcast", event: "tv-state", payload: { state: "GAMEOVER" } });
-            }
-        </script>
-    </body>
+            showScreen('screen-gameover');
+            channel.send({ type: "broadcast", event: "tv-state", payload: { state: "GAMEOVER" } });
+        }
+    </script>
+</body>
 </html>

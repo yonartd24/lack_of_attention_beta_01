@@ -1,260 +1,174 @@
 <!doctype html>
 <html lang="en">
-    <head>
-        <meta charset="UTF-8" />
-        <meta
-            name="viewport"
-            content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-        <title>Mobile - Brain Drain</title>
-        <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-        <style>
-            body,
-            html {
-                margin: 0;
-                padding: 0;
-                height: 100%;
-                width: 100%;
-                font-family: "Helvetica Neue", Arial, sans-serif;
-                overflow: hidden;
-                background-color: #1a1a1a;
-                color: white;
-                -webkit-touch-callout: none;
-                -webkit-user-select: none;
-            }
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <title>Mobile - Brain Drain</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root { --c-green: #1ad872; --c-red: #f9432d; --c-yellow: #efd828; --c-blue: #27a4e4; }
+        body, html { margin: 0; padding: 0; height: 100%; width: 100%; font-family: "Helvetica Neue", Arial, sans-serif; overflow: hidden; background-color: #1a1a1a; color: white; -webkit-touch-callout: none; -webkit-user-select: none; }
+        
+        .screen { display: none; height: 100vh; width: 100vw; justify-content: center; align-items: center; flex-direction: column; text-align: center; padding: 20px; box-sizing: border-box; }
+        .active { display: flex; }
 
-            .screen {
-                display: none;
-                height: 100vh;
-                width: 100vw;
-                justify-content: center;
-                align-items: center;
-                flex-direction: column;
-                text-align: center;
-                padding: 20px;
-                box-sizing: border-box;
-            }
-            .active {
-                display: flex;
-            }
+        /* Nickname / Buttons */
+        .dynamic-btn { display: flex; align-items: center; justify-content: space-between; background: var(--c-green); padding: 10px 10px 10px 30px; border-radius: 50px; width: 80%; transition: background-color 0.5s; margin-top: 30px; }
+        .dynamic-btn input { background: transparent; border: none; color: black; font-size: 1.5rem; font-weight: bold; width: 70%; outline: none; }
+        .dynamic-btn input::placeholder { color: rgba(0,0,0,0.5); }
+        .circle-btn { background: white; color: black; border: none; width: 50px; height: 50px; border-radius: 50%; font-size: 1.5rem; display: flex; justify-content: center; align-items: center; cursor: pointer; font-weight: bold; }
+        
+        /* Menu Buttons */
+        .menu-btn { background: white; color: black; border: none; padding: 20px; font-size: 1.5rem; font-weight: bold; border-radius: 30px; margin-top: 15px; width: 80%; cursor: pointer; text-transform: uppercase; }
+        .menu-btn.green { background: var(--c-green); color: black; }
+        .menu-btn.blue { background: var(--c-blue); color: white; }
+        .menu-btn.yellow { background: var(--c-yellow); color: black; }
 
-            .btn {
-                background: white;
-                color: black;
-                border: none;
-                padding: 15px 40px;
-                font-size: 1.5rem;
-                font-weight: bold;
-                border-radius: 30px;
-                margin-top: 20px;
-                cursor: pointer;
-            }
-            .btn:active {
-                opacity: 0.7;
-                transform: scale(0.95);
-            }
+        /* Bouncing Arrow */
+        .arrow-up { font-size: 5rem; animation: bounceUp 1.5s ease-in-out infinite; margin-bottom: 20px; }
+        @keyframes bounceUp { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-20px); } }
 
-            input[type="text"] {
-                font-size: 1.5rem;
-                padding: 15px;
-                border-radius: 10px;
-                border: none;
-                width: 80%;
-                text-align: center;
-                margin-bottom: 20px;
-            }
-            #error-msg {
-                color: #ff3b30;
-                display: none;
-                margin-top: 10px;
-            }
-            #status-msg {
-                color: #aaa;
-                margin-top: 20px;
-                font-size: 0.9rem;
-            }
+        /* Game Grid */
+        #game-grid { display: none; height: 100vh; width: 100vw; flex-wrap: wrap; }
+        .color-btn { width: 50%; height: 50vh; border: none; position: relative; outline: none; transition: opacity 0.1s; }
+        .color-btn:active { opacity: 0.5; }
+        #btn-green { background-color: var(--c-green); order: 1; }
+        #btn-red { background-color: var(--c-red); order: 2; }
+        #btn-yellow { background-color: var(--c-yellow); order: 3; }
+        #btn-blue { background-color: var(--c-blue); order: 4; }
+    </style>
+</head>
+<body>
 
-            #game-grid {
-                display: none;
-                height: 100vh;
-                width: 100vw;
-                flex-wrap: wrap;
-            }
-            .color-btn {
-                width: 50%;
-                height: 50vh;
-                border: none;
-                position: relative;
-                display: flex;
-                justify-content: center;
-                align-items: center;
-                outline: none;
-            }
-            .color-btn:active {
-                opacity: 0.5;
-            }
-            #btn-green { background-color: #34c759; order: 1; }
-            #btn-red { background-color: #ff3b30; order: 2; }
-            #btn-yellow { background-color: #ffcc00; order: 3; }
-            #btn-blue { background-color: #007aff; order: 4; }
-        </style>
-    </head>
-    <body>
-        <div id="screen-login" class="screen active">
-            <h2>ENTER NICKNAME</h2>
-            <input type="text" id="nickname-input" placeholder="Your name" maxlength="12" />
-            <button class="btn" id="join-btn" onclick="joinGame()" style="opacity: 0.5; pointer-events: none">
-                Connecting...
-            </button>
-            <p id="error-msg">Please keep it clean!</p>
-            <p id="status-msg">Waiting for server...</p>
+    <div id="screen-login" class="screen active" style="background: black;">
+        <div class="dynamic-btn" id="nick-container">
+            <input type="text" id="nickname-input" placeholder="Nickname" maxlength="12" />
+            <button class="circle-btn" onclick="joinGame()">→</button>
         </div>
+        <p id="status-msg" style="color: #aaa; margin-top: 20px;">Waiting for server...</p>
+    </div>
 
-        <div id="screen-start" class="screen">
-            <h2>YOU'RE IN!</h2>
-            <p>Look at the TV.</p>
-            <button class="btn" style="background: #34c759; color: white; padding: 20px 60px" onclick="startGame()">
-                START
-            </button>
-        </div>
+    <div id="screen-start" class="screen" style="background: black;">
+        <h2 id="player-name-display" style="font-size: 2rem;">Player name</h2>
+        <button class="menu-btn" style="background: transparent; color: white; border: 2px solid white; margin-top: 50px;" onclick="startGame()">START</button>
+    </div>
 
-        <div id="screen-block" class="screen" style="background-color: #000; z-index: 200">
-            <h1 id="block-title" style="color: #ff3b30; font-size: 3rem; margin-bottom: 20px;">LOOK UP</h1>
-            <p id="block-desc" style="font-size: 1.5rem; color: #aaa;">Device Locked</p>
-        </div>
+    <div id="screen-block" class="screen" style="background-color: #000; z-index: 200">
+        <div class="arrow-up">↑</div>
+        <h1 id="block-title" style="color: var(--c-red); font-size: 3.5rem; margin: 0;">MEMORIZE!</h1>
+        <p id="block-desc" style="font-size: 1.5rem; color: white;">Remember the path</p>
+    </div>
 
-        <div id="game-grid">
-            <button class="color-btn" id="btn-green" onclick="sendTap('#34C759')"></button>
-            <button class="color-btn" id="btn-red" onclick="sendTap('#FF3B30')"></button>
-            <button class="color-btn" id="btn-yellow" onclick="sendTap('#FFCC00')"></button>
-            <button class="color-btn" id="btn-blue" onclick="sendTap('#007AFF')"></button>
-        </div>
+    <div id="game-grid">
+        <button class="color-btn" id="btn-green" onclick="sendTap('#1ad872')"></button>
+        <button class="color-btn" id="btn-red" onclick="sendTap('#f9432d')"></button>
+        <button class="color-btn" id="btn-yellow" onclick="sendTap('#efd828')"></button>
+        <button class="color-btn" id="btn-blue" onclick="sendTap('#27a4e4')"></button>
+    </div>
 
-        <div id="screen-gameover" class="screen">
-            <h1 style="margin-bottom: 40px">GAME OVER</h1>
-            <button class="btn" style="width: 80%; background: #007aff; color: white" onclick="startGame()">
-                TRY AGAIN
-            </button>
-            <button
-                class="btn"
-                style="width: 80%; background: #333; color: white"
-                onclick="alert('Scoreboard database coming soon!')">
-                SCOREBOARD
-            </button>
-            <button
-                class="btn"
-                style="width: 80%; background: #ff3b30; color: white; margin-top: 40px"
-                onclick="exitGame()">
-                EXIT
-            </button>
-        </div>
+    <div id="screen-gameover" class="screen" style="background: black;">
+        <h1 style="color: var(--c-red); font-size: 4rem; margin-bottom: 40px">YOU<br>LOSE</h1>
+        <button class="menu-btn green" onclick="requestMenu('EXTRA_INFO_REQ')">EXTRA INFO</button>
+        <button class="menu-btn blue" onclick="startGame()">TRY AGAIN</button>
+        <button class="menu-btn" style="background: white;" onclick="requestMenu('SCOREBOARD_REQ')">SCOREBOARD</button>
+        <button class="menu-btn yellow" style="margin-top: 40px;" onclick="exitGame()">EXIT</button>
+    </div>
 
-        <script>
-            const supabaseUrl = "https://hpmmzyfxchqlazxkbrym.supabase.co";
-            const supabaseKey = "sb_publishable_z7XELKJhbVvNwnB1iIJq9g_7-CvO-rb";
-            const clienteSupabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+    <div id="screen-rank" class="screen" style="background: black;">
+        <h2 style="color: var(--c-red); font-size: 3rem; margin-bottom: 10px;">YOU'RE</h2>
+        <h2 style="color: var(--c-red); font-size: 3rem; margin-top: 0; margin-bottom: 40px;">THE #8</h2>
+        <button class="menu-btn green" onclick="requestMenu('EXTRA_INFO_REQ')">EXTRA INFO</button>
+        <button class="menu-btn blue" onclick="startGame()">TRY AGAIN</button>
+        <button class="menu-btn yellow" style="margin-top: 40px;" onclick="exitGame()">EXIT</button>
+    </div>
 
-            const channel = clienteSupabase.channel("simon-sync");
+    <script>
+        // --- CYCLE COLORS FOR LOGIN ---
+        const colors = ['#1ad872', '#f9432d', '#efd828', '#27a4e4'];
+        let colorIdx = 0;
+        setInterval(() => {
+            if(document.getElementById('screen-login').classList.contains('active')) {
+                colorIdx = (colorIdx + 1) % colors.length;
+                document.getElementById('nick-container').style.backgroundColor = colors[colorIdx];
+            }
+        }, 2000);
 
-            const badWords = ["fuck", "shit", "bitch", "ass", "dick"];
+        // --- SUPABASE ---
+        const supabaseUrl = "https://hpmmzyfxchqlazxkbrym.supabase.co";
+        const supabaseKey = "sb_publishable_z7XELKJhbVvNwnB1iIJq9g_7-CvO-rb";
+        const clienteSupabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+        const channel = clienteSupabase.channel("simon-sync");
 
-            function showScreen(id) {
-                document.querySelectorAll(".screen").forEach((s) => s.classList.remove("active"));
-                document.getElementById("game-grid").style.display = "none";
+        function showScreen(id) {
+            document.querySelectorAll(".screen").forEach((s) => s.classList.remove("active"));
+            document.getElementById("game-grid").style.display = "none";
 
-                if (id === "game-grid") {
-                    document.getElementById(id).style.display = "flex";
-                } else {
-                    document.getElementById(id).classList.add("active");
+            if (id === "game-grid") {
+                document.getElementById(id).style.display = "flex";
+            } else {
+                document.getElementById(id).classList.add("active");
+            }
+        }
+
+        function joinGame() {
+            const name = document.getElementById("nickname-input").value.trim() || "Player";
+            document.getElementById("player-name-display").innerText = name;
+            
+            channel.send({ type: "broadcast", event: "mobile-action", payload: { action: "JOIN", value: name } });
+            showScreen("screen-start");
+        }
+
+        function startGame() {
+            // Actúa como "Try Again" también, saltando el nickname
+            channel.send({ type: "broadcast", event: "mobile-action", payload: { action: "START" } });
+        }
+
+        function requestMenu(actionType) {
+            // SCOREBOARD_REQ o EXTRA_INFO_REQ
+            channel.send({ type: "broadcast", event: "mobile-action", payload: { action: actionType } });
+            if(actionType === 'SCOREBOARD_REQ') showScreen("screen-rank");
+        }
+
+        let ultimoToque = 0;
+        function sendTap(hex) {
+            const ahora = Date.now();
+            // THROTTLING: Bloqueo de 1 segundo (1000ms) pedido en el PDF
+            if (ahora - ultimoToque < 1000) return;
+            ultimoToque = ahora;
+
+            channel.send({ type: "broadcast", event: "mobile-action", payload: { action: "TAP", value: hex } });
+        }
+
+        function exitGame() {
+            channel.send({ type: "broadcast", event: "mobile-action", payload: { action: "EXIT" } });
+            location.reload();
+        }
+
+        channel
+            .on("broadcast", { event: "tv-state" }, (data) => {
+                const state = data.payload.state;
+                if (state === "BLOCKED") {
+                    document.getElementById("block-title").innerText = "LOOK AT\nTHE TV";
+                    document.getElementById("block-title").style.color = "var(--c-red)";
+                    document.getElementById("block-desc").innerText = "Read the fact";
+                    showScreen("screen-block");
+                } else if (state === "WATCH") {
+                    document.getElementById("block-title").innerText = "MEMORIZE!";
+                    document.getElementById("block-title").style.color = "var(--c-red)";
+                    document.getElementById("block-desc").innerText = "Remember the path";
+                    showScreen("screen-block");
+                } else if (state === "PLAY") {
+                    showScreen("game-grid");
+                } else if (state === "GAMEOVER") {
+                    showScreen("screen-gameover");
                 }
-            }
-
-            function joinGame() {
-                const name = document.getElementById("nickname-input").value.trim().toLowerCase();
-                const errorMsg = document.getElementById("error-msg");
-
-                if (name.length < 2) return;
-
-                const isClean = !badWords.some((word) => name.includes(word));
-                if (!isClean) {
-                    errorMsg.style.display = "block";
-                    return;
+            })
+            .subscribe((status) => {
+                if (status === "SUBSCRIBED") {
+                    document.getElementById("status-msg").innerText = "Connected!";
+                    document.getElementById("status-msg").style.color = "var(--c-green)";
                 }
-
-                errorMsg.style.display = "none";
-                channel.send({
-                    type: "broadcast",
-                    event: "mobile-action",
-                    payload: { action: "JOIN", value: name.toUpperCase() }
-                });
-                showScreen("screen-start");
-            }
-
-            function startGame() {
-                channel.send({ type: "broadcast", event: "mobile-action", payload: { action: "START" } });
-            }
-
-            let ultimoToque = 0;
-
-            function sendTap(hex) {
-                const ahora = Date.now();
-                if (ahora - ultimoToque < 250) return;
-                ultimoToque = ahora;
-
-                const btn = Object.values(document.querySelectorAll(".color-btn")).find((b) =>
-                    b.getAttribute("onclick").includes(hex)
-                );
-                btn.style.opacity = "0.2";
-                setTimeout(() => (btn.style.opacity = "1"), 150);
-
-                channel.send({ type: "broadcast", event: "mobile-action", payload: { action: "TAP", value: hex } });
-            }
-
-            function exitGame() {
-                channel.send({ type: "broadcast", event: "mobile-action", payload: { action: "EXIT" } });
-                location.reload();
-            }
-
-            channel
-                .on("broadcast", { event: "tv-state" }, (data) => {
-                    const state = data.payload.state;
-                    if (state === "BLOCKED") {
-                        document.getElementById("block-title").innerText = "LOOK UP";
-                        document.getElementById("block-desc").innerText = "Device Locked";
-                        showScreen("screen-block");
-                    } else if (state === "WATCH") {
-                        document.getElementById("block-title").innerText = "MEMORIZE!";
-                        document.getElementById("block-desc").innerText = "Watch the sequence...";
-                        showScreen("screen-block");
-                    } else if (state === "PLAY") {
-                        showScreen("game-grid");
-                    } else if (state === "GAMEOVER") {
-                        showScreen("screen-gameover");
-                    }
-                })
-                .subscribe((status, err) => {
-                    const statusMsg = document.getElementById("status-msg");
-                    const joinBtn = document.getElementById("join-btn");
-
-                    if (status === "SUBSCRIBED") {
-                        joinBtn.style.opacity = "1";
-                        joinBtn.style.pointerEvents = "auto";
-                        joinBtn.innerText = "JOIN";
-                        statusMsg.innerText = "Connected. Ready to play!";
-                        statusMsg.style.color = "#34C759";
-                    } else if (status === "CHANNEL_ERROR") {
-                        statusMsg.innerText = "Connection error. Check your Wi-Fi/Data.";
-                        statusMsg.style.color = "#FF3B30";
-                    } else if (status === "TIMED_OUT") {
-                        statusMsg.innerText = "Connection timed out. Reload the page.";
-                        statusMsg.style.color = "#FFCC00";
-                    }
-                });
-
-            setTimeout(() => {
-                if (document.getElementById("join-btn").style.opacity !== "1") {
-                    document.getElementById("status-msg").innerText = "Server is taking too long... Are you connected to the internet?";
-                }
-            }, 5000);
-        </script>
-    </body>
+            });
+    </script>
+</body>
 </html>
