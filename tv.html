@@ -7,67 +7,121 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
+            /* Colores oficiales de tu PDF */
             --c-green: #1ad872;
             --c-red: #f9432d;
             --c-yellow: #efd828;
             --c-blue: #27a4e4;
         }
-        body { margin: 0; font-family: "Helvetica Neue", Arial, sans-serif; background-color: #1a1a1a; color: white; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; transition: background-color 0.5s, color 0.5s; }
-        .screen { display: none; text-align: center; width: 100%; height: 100%; padding: 20px; box-sizing: border-box; flex-direction: column; justify-content: center; align-items: center; }
+
+        body { 
+            margin: 0; 
+            font-family: "Helvetica Neue", Arial, sans-serif; 
+            background-color: #1a1a1a; 
+            color: white; 
+            overflow: hidden; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center; 
+            height: 100vh; 
+            transition: background-color 0.5s; 
+        }
+        
+        .screen { 
+            display: none; 
+            width: 100%; 
+            height: 100%; 
+            padding: 50px; /* Ajuste manual general de los bordes de la pantalla */
+            box-sizing: border-box; 
+            flex-direction: column; 
+            justify-content: center; 
+            align-items: center; 
+        }
         .active { display: flex; }
         
-        h1 { font-size: 5rem; margin-bottom: 10px; text-transform: uppercase; }
-        p { font-size: 2rem; font-weight: bold; }
+        /* Ajuste manual para el texto principal */
+        .title-text { 
+            font-size: 6rem; 
+            margin: 0; 
+            font-weight: 900; 
+            text-transform: uppercase; 
+            text-align: center; /* Cambia a 'left' si quieres alinearlo a la izquierda */
+        }
+        .subtitle-text { 
+            font-size: 3rem; 
+            margin-top: 10px; /* Separación con el título */
+            font-weight: bold; 
+            text-align: center;
+        }
         
-        .bouncing-arrow { font-size: 4rem; animation: bounce 1.5s ease-in-out infinite; margin-top: 20px; }
-        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(20px); } }
+        .bouncing-arrow { font-size: 5rem; animation: bounce 1.5s ease-in-out infinite; margin-top: 40px; }
+        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(30px); } }
 
-        /* SIMON BOARD */
-        #simon-board { display: none; grid-template-columns: 1fr 1fr; width: 90vh; height: 90vh; gap: 15px; position: relative; }
-        .simon-color { border-radius: 20px; filter: blur(10px); opacity: 0.6; transition: all 0.2s ease; }
-        .simon-color.highlight { filter: blur(0px); opacity: 1; transform: scale(1.02); }
+        /* JUEGO SIMON (Efecto Blur Mejorado) */
+        #simon-board { display: none; grid-template-columns: 1fr 1fr; width: 80vh; height: 80vh; gap: 20px; position: relative; }
+        .simon-color { 
+            border-radius: 30px; 
+            opacity: 0.2; /* Inactivo se ve apagado */
+            transition: all 0.2s ease; 
+        }
+        .simon-color.highlight { 
+            opacity: 1; /* Activo se ve 100% brillante */
+            transform: scale(1.02); 
+        }
         
-        #tv-green { background-color: var(--c-green); } #tv-green.highlight { box-shadow: 0 0 50px var(--c-green); }
-        #tv-red { background-color: var(--c-red); } #tv-red.highlight { box-shadow: 0 0 50px var(--c-red); }
-        #tv-yellow { background-color: var(--c-yellow); } #tv-yellow.highlight { box-shadow: 0 0 50px var(--c-yellow); }
-        #tv-blue { background-color: var(--c-blue); } #tv-blue.highlight { box-shadow: 0 0 50px var(--c-blue); }
+        #tv-green { background-color: var(--c-green); } #tv-green.highlight { box-shadow: 0 0 60px var(--c-green), inset 0 0 30px white; }
+        #tv-red { background-color: var(--c-red); } #tv-red.highlight { box-shadow: 0 0 60px var(--c-red), inset 0 0 30px white; }
+        #tv-yellow { background-color: var(--c-yellow); } #tv-yellow.highlight { box-shadow: 0 0 60px var(--c-yellow), inset 0 0 30px white; }
+        #tv-blue { background-color: var(--c-blue); } #tv-blue.highlight { box-shadow: 0 0 60px var(--c-blue), inset 0 0 30px white; }
         
-        #center-counter { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 5rem; font-weight: bold; color: white; text-shadow: 0 0 20px rgba(0,0,0,0.8); z-index: 10; display: none; pointer-events: none; }
+        #center-counter { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 6rem; font-weight: bold; color: white; text-shadow: 0 0 30px rgba(0,0,0,0.9); z-index: 10; display: none; pointer-events: none; }
 
         /* FACTS */
-        #fact-container { background: var(--c-red); padding: 50px; border-radius: 30px; max-width: 70%; z-index: 50; display: none; color: black; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
-        #fact-text { font-size: 3rem; line-height: 1.2; font-weight: bold; margin-bottom: 30px; }
-        #tv-timer { font-size: 5rem; font-weight: 900; background: rgba(255,255,255,0.8); border-radius: 20px; display: inline-block; padding: 10px 40px; }
+        #fact-container { background: var(--c-red); padding: 60px; border-radius: 30px; max-width: 80%; z-index: 50; display: none; color: black; text-align: left; }
+        #fact-text { font-size: 3.5rem; line-height: 1.2; font-weight: bold; margin-bottom: 40px; }
+        #tv-timer-container { display: flex; justify-content: flex-end; }
+        #tv-timer { font-size: 4rem; font-weight: 900; background: white; border-radius: 20px; border: 4px solid black; padding: 10px 40px; }
         
-        /* DATA SCREENS */
-        .data-screen { background: black; color: white; width: 100%; height: 100%; }
-        .data-screen h1 { color: var(--c-red); }
-        .data-row { font-size: 2rem; margin: 15px 0; }
-        #chart-img { max-width: 80%; max-height: 60vh; }
+        /* DATA SCREENS (Game Over) */
+        .data-screen { background: black; color: white; width: 100%; height: 100%; align-items: flex-start; padding-left: 10%; }
+        .data-row { font-size: 2.5rem; margin: 20px 0; font-weight: bold; text-align: left; }
+        .data-row span { color: #888; font-size: 2rem; display: block; font-weight: normal; margin-top: 5px;}
 
-        /* INITIAL OVERLAY FOR AUDIO */
-        #audio-overlay { position: fixed; top:0; left:0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.9); z-index: 9999; display: flex; justify-content: center; align-items: center; cursor: pointer; }
+        /* SCOREBOARD EXACTO AL PDF */
+        #scoreboard-container { display: grid; grid-template-columns: repeat(5, 1fr); grid-template-rows: repeat(2, 1fr); gap: 2px; background-color: var(--c-red); /* Esto hace las líneas rojas */ width: 100%; height: 70vh; margin-top: 20px;}
+        .sb-cell { background-color: black; display: flex; flex-direction: column; justify-content: center; align-items: flex-start; padding: 20px; }
+        .sb-number { font-size: 5rem; font-weight: 900; margin: 0; }
+        .sb-name { font-size: 1.5rem; color: white; margin-top: 10px; }
+
+        /* OVERLAY AUDIO */
+        #audio-overlay { position: fixed; top:0; left:0; width: 100vw; height: 100vh; background: black; z-index: 9999; display: flex; justify-content: center; align-items: center; cursor: pointer; }
     </style>
 </head>
 <body>
 
+    <audio id="snd-bg" src="sounds/waiting_room_song.mp3" loop preload="auto"></audio>
+    <audio id="snd-color" src="sounds/sound_1.mp3" preload="auto"></audio>
+    <audio id="snd-start" src="sounds/sound_2.mp3" preload="auto"></audio>
+    <audio id="snd-fact" src="sounds/sound_4.mp3" preload="auto"></audio>
+
     <div id="audio-overlay" onclick="initExperience()">
-        <h1 style="color: white; border: 2px solid white; padding: 20px;">CLICK HERE TO START EXPERIENCE</h1>
+        <h1 style="color: white; border: 2px solid white; padding: 20px; border-radius: 20px;">CLICK HERE TO START EXPERIENCE</h1>
     </div>
 
     <div id="screen-idle" class="screen">
-        <h1>ATTENTION TEST</h1>
-        <p>SCAN TO START</p>
+        <h1 class="title-text">ATTENTION TEST</h1>
+        <p class="subtitle-text">SCAN TO START</p>
         <div class="bouncing-arrow">↓</div>
     </div>
 
     <div id="screen-scan-wait" class="screen" style="background: black;">
-        <h1 id="text-look-phone">LOOK AT<br>YOUR PHONE</h1>
+        <h1 class="title-text" id="text-look-phone">LOOK AT<br>YOUR PHONE</h1>
     </div>
 
     <div id="screen-ready" class="screen" style="background: black;">
-        <p style="font-size: 3rem;">PLAYER</p>
-        <h1 id="text-player-ready">IS READY TO PLAY</h1>
+        <p class="subtitle-text" id="tv-player-name" style="margin-bottom: 0;">PLAYER</p>
+        <h1 class="title-text" id="text-player-ready">IS READY TO PLAY</h1>
     </div>
 
     <div id="screen-game" class="screen" style="background: black; flex-direction: row;">
@@ -80,48 +134,51 @@
         </div>
         <div id="fact-container">
             <div id="fact-text">Did you know?</div>
-            <div id="tv-timer">5</div>
+            <div id="tv-timer-container"><div id="tv-timer">5</div></div>
         </div>
     </div>
 
     <div id="screen-gameover" class="screen data-screen">
-        <h1>YOU LOSE</h1>
-        <div class="data-row">ATTENTION TIME<br><span id="res-time" style="color:#aaa;">0:00 minutes</span></div>
-        <div class="data-row">COLORS MEMORIZED<br><span id="res-colors" style="color:#aaa;">0 colors, good job!</span></div>
-        <div class="data-row">FACTS READED<br><span id="res-facts" style="color:#aaa;">0 facts, interesting?</span></div>
-        <div class="data-row">AVERAGE SCORE<br><span style="color:#aaa;">5 colors, you're locked in!</span></div>
+        <h1 style="color: var(--c-red); font-size: 5rem; margin-bottom: 40px; margin-top: 0;">YOU<br>LOSE</h1>
+        <div class="data-row">ATTENTION TIME<br><span id="res-time">0:00 minutes</span></div>
+        <div class="data-row">COLORS MEMORIZED<br><span id="res-colors">0 colors, good job!</span></div>
+        <div class="data-row">FACTS READED<br><span id="res-facts">0 facts, interesting?</span></div>
+        <div class="data-row">AVERAGE SCORE<br><span>5 colors, you're locked in!</span></div>
     </div>
 
-    <div id="screen-scoreboard" class="screen data-screen">
-        <h1 style="color: white; margin-bottom: 40px;">SCOREBOARD</h1>
-        <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 20px; width: 90%;">
-            <div><h2 style="color: var(--c-green);">#1</h2><p>Player 1</p></div>
-            <div><h2 style="color: var(--c-yellow);">#2</h2><p>Player 2</p></div>
-            <div><h2 style="color: var(--c-blue);">#3</h2><p>Player 3</p></div>
-            <div><h2 style="color: white;">#4</h2><p>Player 4</p></div>
-            <div><h2 style="color: white;">#5</h2><p>Player 5</p></div>
+    <div id="screen-scoreboard" class="screen data-screen" style="padding: 50px;">
+        <div id="scoreboard-container">
+            <div class="sb-cell"><h2 class="sb-number" style="color: var(--c-green);">#1</h2><p class="sb-name">Player name</p></div>
+            <div class="sb-cell"><h2 class="sb-number" style="color: var(--c-yellow);">#2</h2><p class="sb-name">Player name</p></div>
+            <div class="sb-cell"><h2 class="sb-number" style="color: var(--c-blue);">#3</h2><p class="sb-name">Player name</p></div>
+            <div class="sb-cell"><h2 class="sb-number" style="color: white;">#4</h2><p class="sb-name">Player name</p></div>
+            <div class="sb-cell"><h2 class="sb-number" style="color: white;">#5</h2><p class="sb-name">Player name</p></div>
+            
+            <div class="sb-cell"><h2 class="sb-number" style="color: white;">#6</h2><p class="sb-name">Player name</p></div>
+            <div class="sb-cell"><h2 class="sb-number" style="color: white;">#7</h2><p class="sb-name">Player name</p></div>
+            <div class="sb-cell"><h2 class="sb-number" style="color: white;">#8</h2><p class="sb-name">Player name</p></div>
+            <div class="sb-cell"><h2 class="sb-number" style="color: white;">#9</h2><p class="sb-name">Player name</p></div>
+            <div class="sb-cell"><h2 class="sb-number" style="color: white;">#10</h2><p class="sb-name">Player name</p></div>
         </div>
     </div>
 
-    <div id="screen-extrainfo" class="screen data-screen">
-        <img id="chart-img" src="charts/chart_1.svg" alt="Extra Info Chart" onerror="this.style.display='none'">
-        <p style="margin-top: 20px; color: #aaa;">Look at your phone to return</p>
+    <div id="screen-extrainfo" class="screen data-screen" style="align-items: center; justify-content: center; padding: 0;">
+        <img id="chart-img" src="charts/chart_1.svg" alt="Extra Info Chart" onerror="this.style.display='none'" style="max-width: 90vw; max-height: 90vh;">
     </div>
 
     <script>
-        // --- AUDIO SETUP ---
-        const audioBg = new Audio('sounds/waiting_room_song.mp3'); audioBg.loop = true;
-        const audioColor = new Audio('sounds/sound_1.mp3');
-        const audioStart = new Audio('sounds/sound_2.mp3');
-        const audioFact = new Audio('sounds/sound_4.mp3');
+        // DOM Elements para Sonidos
+        const sndBg = document.getElementById('snd-bg');
+        const sndColor = document.getElementById('snd-color');
+        const sndStart = document.getElementById('snd-start');
+        const sndFact = document.getElementById('snd-fact');
 
         function initExperience() {
             document.getElementById('audio-overlay').style.display = 'none';
-            audioBg.play().catch(e => console.log("Audio play failed", e));
+            sndBg.play().catch(e => console.log("Audio play falló", e));
             showScreen('screen-idle');
         }
 
-        // --- CYCLE COLORS LOGIC ---
         const colors = ['#1ad872', '#f9432d', '#efd828', '#27a4e4'];
         let colorIdx = 0;
         
@@ -129,25 +186,21 @@
             colorIdx = (colorIdx + 1) % colors.length;
             const c = colors[colorIdx];
             
-            // IDLE Screen (Background changes)
             if(document.getElementById('screen-idle').classList.contains('active')) {
                 document.body.style.backgroundColor = c;
             } else {
                 document.body.style.backgroundColor = 'black';
             }
             
-            // SCAN WAIT / READY (Text changes)
             document.getElementById('text-look-phone').style.color = c;
             document.getElementById('text-player-ready').style.color = c;
         }, 2000);
 
-        // --- SUPABASE ---
         const supabaseUrl = "https://hpmmzyfxchqlazxkbrym.supabase.co";
         const supabaseKey = "sb_publishable_z7XELKJhbVvNwnB1iIJq9g_7-CvO-rb";
         const clienteSupabase = window.supabase.createClient(supabaseUrl, supabaseKey);
         const channel = clienteSupabase.channel("simon-sync").subscribe();
 
-        // --- GAME VARIABLES ---
         const facts = [
             "Avondale Middle School recorded a 68% reduction in physical fighting after removing phones.",
             "Removing phones is equivalent to adding 5 extra days of learning to the school year.",
@@ -164,7 +217,6 @@
         let lastColorHex = '#f9432d';
         const colorIds = { '#1ad872': 'tv-green', '#f9432d': 'tv-red', '#efd828': 'tv-yellow', '#27a4e4': 'tv-blue' };
 
-        // --- NAVIGATION ---
         function showScreen(id) {
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
             document.getElementById(id).classList.add('active');
@@ -176,17 +228,18 @@
             }
         }
 
-        // --- NETWORK LISTENER ---
         channel.on("broadcast", { event: "mobile-action" }, (data) => {
             const action = data.payload.action;
             const value = data.payload.value;
 
             if (action === "JOIN") {
-                audioBg.pause(); // Para la música del lobby
+                sndBg.pause(); // Pausa la música
+                // ACTUALIZA EL NICKNAME EN LA TV
+                document.getElementById('tv-player-name').innerText = value.toUpperCase();
                 showScreen('screen-scan-wait');
-                setTimeout(() => showScreen('screen-ready'), 2000); // Salta al READY automáticamente
+                setTimeout(() => showScreen('screen-ready'), 2000); 
             } else if (action === "START" || action === "TRY_AGAIN") {
-                audioStart.currentTime = 0; audioStart.play();
+                sndStart.currentTime = 0; sndStart.play();
                 startGame();
             } else if (action === "TAP" && isPlaying) {
                 checkPlayerInput(value);
@@ -200,13 +253,10 @@
             }
         });
 
-        // --- GAME LOGIC ---
         function startGame() {
             showScreen('screen-game');
             sequence = []; level = 0; factsSeen = 0; startTime = Date.now();
             document.getElementById('center-counter').style.display = 'none';
-            
-            // 2 Segundos de margen como pediste en el PDF
             setTimeout(nextRound, 2000);
         }
 
@@ -214,7 +264,7 @@
             level++; playerStep = 0;
             const nextHex = colors[Math.floor(Math.random() * colors.length)];
             sequence.push(nextHex);
-            lastColorHex = nextHex; // Guardamos el último color para el Fact Box
+            lastColorHex = nextHex; 
             isPlaying = false;
             document.getElementById('center-counter').style.display = 'none';
 
@@ -232,13 +282,13 @@
             const factBox = document.getElementById("fact-container");
             const timerText = document.getElementById("tv-timer");
             
-            // El color de la caja de fact es igual al último color
             factBox.style.backgroundColor = lastColorHex;
             document.getElementById("fact-text").innerText = facts[Math.floor(Math.random() * facts.length)];
             
             document.getElementById('simon-board').style.display = 'none';
             factBox.style.display = "block";
-            audioFact.currentTime = 0; audioFact.play();
+            
+            sndFact.currentTime = 0; sndFact.play(); // Reproduce sonido Fact
 
             channel.send({ type: "broadcast", event: "tv-state", payload: { state: "BLOCKED" } });
 
@@ -264,7 +314,6 @@
                     clearInterval(interval);
                     setTimeout(() => {
                         isPlaying = true;
-                        // Mostramos el contador en el centro
                         document.getElementById('center-counter').innerText = sequence.length;
                         document.getElementById('center-counter').style.display = 'block';
                         channel.send({ type: "broadcast", event: "tv-state", payload: { state: "PLAY" } });
@@ -275,7 +324,7 @@
 
         function highlightColor(hex) {
             const el = document.getElementById(colorIds[hex]);
-            audioColor.currentTime = 0; audioColor.play();
+            sndColor.currentTime = 0; sndColor.play(); // Reproduce sonido Color
             el.classList.add("highlight");
             setTimeout(() => el.classList.remove("highlight"), 300); 
         }

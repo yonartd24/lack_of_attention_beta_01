@@ -6,7 +6,12 @@
     <title>Mobile - Brain Drain</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        :root { --c-green: #1ad872; --c-red: #f9432d; --c-yellow: #efd828; --c-blue: #27a4e4; }
+        :root { 
+            --c-green: #1ad872; 
+            --c-red: #f9432d; 
+            --c-yellow: #efd828; 
+            --c-blue: #27a4e4; 
+        }
         body, html { margin: 0; padding: 0; height: 100%; width: 100%; font-family: "Helvetica Neue", Arial, sans-serif; overflow: hidden; background-color: #1a1a1a; color: white; -webkit-touch-callout: none; -webkit-user-select: none; }
         
         .screen { display: none; height: 100vh; width: 100vw; justify-content: center; align-items: center; flex-direction: column; text-align: center; padding: 20px; box-sizing: border-box; }
@@ -18,14 +23,13 @@
         .dynamic-btn input::placeholder { color: rgba(0,0,0,0.5); }
         .circle-btn { background: white; color: black; border: none; width: 50px; height: 50px; border-radius: 50%; font-size: 1.5rem; display: flex; justify-content: center; align-items: center; cursor: pointer; font-weight: bold; }
         
-        /* Menu Buttons */
+        /* Menu Buttons (Color exacto del PDF) */
         .menu-btn { background: white; color: black; border: none; padding: 20px; font-size: 1.5rem; font-weight: bold; border-radius: 30px; margin-top: 15px; width: 80%; cursor: pointer; text-transform: uppercase; }
         .menu-btn.green { background: var(--c-green); color: black; }
         .menu-btn.blue { background: var(--c-blue); color: white; }
         .menu-btn.yellow { background: var(--c-yellow); color: black; }
 
-        /* Bouncing Arrow */
-        .arrow-up { font-size: 5rem; animation: bounceUp 1.5s ease-in-out infinite; margin-bottom: 20px; }
+        .arrow-up { font-size: 5rem; animation: bounceUp 1.5s ease-in-out infinite; margin-bottom: 20px; color: white; }
         @keyframes bounceUp { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-20px); } }
 
         /* Game Grid */
@@ -49,14 +53,14 @@
     </div>
 
     <div id="screen-start" class="screen" style="background: black;">
-        <h2 id="player-name-display" style="font-size: 2rem;">Player name</h2>
-        <button class="menu-btn" style="background: transparent; color: white; border: 2px solid white; margin-top: 50px;" onclick="startGame()">START</button>
+        <h2 id="player-name-display" style="font-size: 2.5rem; color: white;">Player name</h2>
+        <button class="menu-btn" style="background: transparent; color: white; border: 3px solid white; margin-top: 50px;" onclick="startGame()">START</button>
     </div>
 
     <div id="screen-block" class="screen" style="background-color: #000; z-index: 200">
         <div class="arrow-up">↑</div>
-        <h1 id="block-title" style="color: var(--c-red); font-size: 3.5rem; margin: 0;">MEMORIZE!</h1>
-        <p id="block-desc" style="font-size: 1.5rem; color: white;">Remember the path</p>
+        <h1 id="block-title" style="color: var(--c-red); font-size: 4rem; margin: 0; line-height: 1;">MEMORIZE!</h1>
+        <p id="block-desc" style="font-size: 1.5rem; color: white; margin-top: 10px;">Remember the path</p>
     </div>
 
     <div id="game-grid">
@@ -66,24 +70,22 @@
         <button class="color-btn" id="btn-blue" onclick="sendTap('#27a4e4')"></button>
     </div>
 
-    <div id="screen-gameover" class="screen" style="background: black;">
-        <h1 style="color: var(--c-red); font-size: 4rem; margin-bottom: 40px">YOU<br>LOSE</h1>
+    <div id="screen-gameover" class="screen" style="background: black; justify-content: flex-start; padding-top: 20%;">
+        <h1 style="color: var(--c-red); font-size: 5rem; margin-bottom: 40px; line-height: 1; margin-top: 0;">YOU<br>LOSE</h1>
         <button class="menu-btn green" onclick="requestMenu('EXTRA_INFO_REQ')">EXTRA INFO</button>
         <button class="menu-btn blue" onclick="startGame()">TRY AGAIN</button>
-        <button class="menu-btn" style="background: white;" onclick="requestMenu('SCOREBOARD_REQ')">SCOREBOARD</button>
         <button class="menu-btn yellow" style="margin-top: 40px;" onclick="exitGame()">EXIT</button>
     </div>
 
-    <div id="screen-rank" class="screen" style="background: black;">
-        <h2 style="color: var(--c-red); font-size: 3rem; margin-bottom: 10px;">YOU'RE</h2>
-        <h2 style="color: var(--c-red); font-size: 3rem; margin-top: 0; margin-bottom: 40px;">THE #8</h2>
+    <div id="screen-rank" class="screen" style="background: black; justify-content: flex-start; padding-top: 20%;">
+        <h2 style="color: var(--c-red); font-size: 4rem; margin-bottom: 0;">YOU'RE</h2>
+        <h2 style="color: var(--c-red); font-size: 4rem; margin-top: 0; margin-bottom: 40px;">THE #8</h2>
         <button class="menu-btn green" onclick="requestMenu('EXTRA_INFO_REQ')">EXTRA INFO</button>
         <button class="menu-btn blue" onclick="startGame()">TRY AGAIN</button>
         <button class="menu-btn yellow" style="margin-top: 40px;" onclick="exitGame()">EXIT</button>
     </div>
 
     <script>
-        // --- CYCLE COLORS FOR LOGIN ---
         const colors = ['#1ad872', '#f9432d', '#efd828', '#27a4e4'];
         let colorIdx = 0;
         setInterval(() => {
@@ -93,7 +95,6 @@
             }
         }, 2000);
 
-        // --- SUPABASE ---
         const supabaseUrl = "https://hpmmzyfxchqlazxkbrym.supabase.co";
         const supabaseKey = "sb_publishable_z7XELKJhbVvNwnB1iIJq9g_7-CvO-rb";
         const clienteSupabase = window.supabase.createClient(supabaseUrl, supabaseKey);
@@ -114,17 +115,16 @@
             const name = document.getElementById("nickname-input").value.trim() || "Player";
             document.getElementById("player-name-display").innerText = name;
             
+            // Envía el nombre a la TV
             channel.send({ type: "broadcast", event: "mobile-action", payload: { action: "JOIN", value: name } });
             showScreen("screen-start");
         }
 
         function startGame() {
-            // Actúa como "Try Again" también, saltando el nickname
             channel.send({ type: "broadcast", event: "mobile-action", payload: { action: "START" } });
         }
 
         function requestMenu(actionType) {
-            // SCOREBOARD_REQ o EXTRA_INFO_REQ
             channel.send({ type: "broadcast", event: "mobile-action", payload: { action: actionType } });
             if(actionType === 'SCOREBOARD_REQ') showScreen("screen-rank");
         }
@@ -132,8 +132,8 @@
         let ultimoToque = 0;
         function sendTap(hex) {
             const ahora = Date.now();
-            // THROTTLING: Bloqueo de 1 segundo (1000ms) pedido en el PDF
-            if (ahora - ultimoToque < 1000) return;
+            // BLOQUEO DE 500ms
+            if (ahora - ultimoToque < 500) return;
             ultimoToque = ahora;
 
             channel.send({ type: "broadcast", event: "mobile-action", payload: { action: "TAP", value: hex } });
@@ -149,12 +149,10 @@
                 const state = data.payload.state;
                 if (state === "BLOCKED") {
                     document.getElementById("block-title").innerText = "LOOK AT\nTHE TV";
-                    document.getElementById("block-title").style.color = "var(--c-red)";
                     document.getElementById("block-desc").innerText = "Read the fact";
                     showScreen("screen-block");
                 } else if (state === "WATCH") {
                     document.getElementById("block-title").innerText = "MEMORIZE!";
-                    document.getElementById("block-title").style.color = "var(--c-red)";
                     document.getElementById("block-desc").innerText = "Remember the path";
                     showScreen("screen-block");
                 } else if (state === "PLAY") {
