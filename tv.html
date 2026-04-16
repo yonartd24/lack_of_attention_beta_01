@@ -23,7 +23,6 @@
         .bouncing-arrow { font-size: 5rem; animation: bounce 1.5s ease-in-out infinite; margin-top: 40px; }
         @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(30px); } }
 
-        /* JUEGO SIMON */
         #simon-board { display: none; grid-template-columns: 1fr 1fr; width: 80vh; height: 80vh; gap: 20px; position: relative; }
         .simon-color { border-radius: 30px; opacity: 0.2; transition: all 0.2s ease; }
         .simon-color.highlight { opacity: 1; transform: scale(1.02); }
@@ -35,24 +34,20 @@
         
         #center-counter { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 6rem; font-weight: bold; color: white; text-shadow: 0 0 30px rgba(0,0,0,0.9); z-index: 10; display: none; pointer-events: none; }
 
-        /* FACTS */
         #fact-container { padding: 60px; border-radius: 30px; max-width: 80%; z-index: 50; display: none; color: black; text-align: left; transition: background-color 0.3s ease; }
         #fact-text { font-size: 3.5rem; line-height: 1.2; font-weight: bold; margin-bottom: 40px; }
         #tv-timer-container { display: flex; justify-content: flex-end; }
         #tv-timer { font-size: 4rem; font-weight: 900; background: white; border-radius: 20px; border: 4px solid black; padding: 10px 40px; }
         
-        /* DATA SCREENS */
         .data-screen { background: black; color: white; width: 100%; height: 100%; align-items: flex-start; padding-left: 10%; }
         .data-row { font-size: 2.5rem; margin: 20px 0; font-weight: bold; text-align: left; }
         .data-row span { color: #888; font-size: 2rem; display: block; font-weight: normal; margin-top: 5px;}
 
-        /* SCOREBOARD */
         #scoreboard-container { display: grid; grid-template-columns: repeat(5, 1fr); grid-template-rows: repeat(2, 1fr); gap: 2px; background-color: var(--c-red); width: 100%; height: 70vh; margin-top: 20px;}
         .sb-cell { background-color: black; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 20px; }
         .sb-number { font-size: 5rem; font-weight: 900; margin: 0; }
         .sb-name { font-size: 1.5rem; color: white; margin-top: 10px; }
 
-        /* OVERLAY AUDIO */
         #audio-overlay { position: fixed; top:0; left:0; width: 100vw; height: 100vh; background: black; z-index: 9999; display: flex; justify-content: center; align-items: center; cursor: pointer; }
     </style>
 </head>
@@ -101,8 +96,7 @@
     </div>
 
     <div id="screen-scoreboard" class="screen data-screen" style="padding: 50px;">
-        <div id="scoreboard-container">
-            </div>
+        <div id="scoreboard-container"></div>
     </div>
 
     <div id="screen-extrainfo" class="screen data-screen" style="align-items: center; justify-content: center; padding: 0;">
@@ -142,7 +136,6 @@
         const clienteSupabase = window.supabase.createClient(supabaseUrl, supabaseKey);
         const channel = clienteSupabase.channel("simon-sync").subscribe();
 
-        // LISTA DE LOS 100 DATOS ÍNTEGROS
         const facts = [
             "Avondale Middle School recorded a 68% reduction in physical fighting after removing phones.",
             "Michigan pilot districts saw a 51% decrease in phone violations following the ban.",
@@ -294,7 +287,6 @@
                 } else if (action === "SCOREBOARD_REQ") {
                     renderScoreboard();
                 } else if (action === "EXTRA_INFO_REQ") {
-                    // Ahora llama del 1 al 10 y espera formato PNG
                     document.getElementById('chart-img').src = `charts/chart_${Math.floor(Math.random()*10)+1}.png`;
                     showScreen('screen-extrainfo');
                 } else if (action === "EXIT") {
@@ -386,7 +378,6 @@
             const factBox = document.getElementById("fact-container");
             const timerText = document.getElementById("tv-timer");
             
-            // EL COLOR DE LA CAJA SE ADAPTA AL ÚLTIMO COLOR USADO
             factBox.style.backgroundColor = lastColorHex;
             document.getElementById("fact-text").innerText = facts[Math.floor(Math.random() * facts.length)];
             
@@ -464,7 +455,22 @@
             showScreen('screen-gameover');
 
             (async () => {
-                await clienteSupabase.from('scores').insert([{ nickname: activePlayer.name, score: finalScore }]);
+                // SISTEMA ANTI-SPAM (Busca el nickname, si la puntuación es más alta, la actualiza. Si no, no guarda)
+                const { data: existingRecords } = await clienteSupabase.from('scores')
+                    .select('*')
+                    .ilike('nickname', activePlayer.name);
+
+                if (existingRecords && existingRecords.length > 0) {
+                    const existingPlayer = existingRecords[0];
+                    if (finalScore > existingPlayer.score) {
+                        await clienteSupabase.from('scores')
+                            .update({ score: finalScore })
+                            .eq('id', existingPlayer.id);
+                    }
+                } else {
+                    await clienteSupabase.from('scores')
+                        .insert([{ nickname: activePlayer.name, score: finalScore }]);
+                }
                 
                 const { count, error } = await clienteSupabase.from('scores')
                     .select('*', { count: 'exact', head: true })

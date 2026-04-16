@@ -91,8 +91,14 @@
     </div>
 
     <script>
-        const myId = Math.random().toString(36).substring(2, 10);
-        let myRank = '--'; // Se actualizará al perder
+        // RECUPERA EL ID DEL DISPOSITIVO O CREA UNO NUEVO PERMANENTE
+        let myId = localStorage.getItem('brain_drain_device_id');
+        if (!myId) {
+            myId = Math.random().toString(36).substring(2, 10);
+            localStorage.setItem('brain_drain_device_id', myId);
+        }
+        
+        let myRank = '--'; 
 
         const colors = ['#1ad872', '#f9432d', '#efd828', '#27a4e4'];
         let colorIdx = 0;
@@ -133,7 +139,6 @@
         function requestMenu(actionType) {
             channel.send({ type: "broadcast", event: "mobile-action", payload: { action: actionType, id: myId } });
             
-            // NUEVO: Inyectar el ranking antes de enseñar la pantalla
             if(actionType === 'SCOREBOARD_REQ') {
                 document.getElementById('dynamic-rank').innerText = "THE #" + myRank;
                 showScreen("screen-rank");
@@ -179,7 +184,6 @@
                 } else if (state === "PLAY") {
                     showScreen("game-grid");
                 } else if (state === "GAMEOVER") {
-                    // Guarda el rango devuelto por la base de datos
                     myRank = data.payload.rank || '--';
                     showScreen("screen-gameover");
                 }
