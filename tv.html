@@ -36,7 +36,7 @@
         #center-counter { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 6rem; font-weight: bold; color: white; text-shadow: 0 0 30px rgba(0,0,0,0.9); z-index: 10; display: none; pointer-events: none; }
 
         /* FACTS */
-        #fact-container { background: var(--c-red); padding: 60px; border-radius: 30px; max-width: 80%; z-index: 50; display: none; color: black; text-align: left; }
+        #fact-container { padding: 60px; border-radius: 30px; max-width: 80%; z-index: 50; display: none; color: black; text-align: left; transition: background-color 0.3s ease; }
         #fact-text { font-size: 3.5rem; line-height: 1.2; font-weight: bold; margin-bottom: 40px; }
         #tv-timer-container { display: flex; justify-content: flex-end; }
         #tv-timer { font-size: 4rem; font-weight: 900; background: white; border-radius: 20px; border: 4px solid black; padding: 10px 40px; }
@@ -46,7 +46,7 @@
         .data-row { font-size: 2.5rem; margin: 20px 0; font-weight: bold; text-align: left; }
         .data-row span { color: #888; font-size: 2rem; display: block; font-weight: normal; margin-top: 5px;}
 
-        /* SCOREBOARD (Ajustado para centrar contenido) */
+        /* SCOREBOARD */
         #scoreboard-container { display: grid; grid-template-columns: repeat(5, 1fr); grid-template-rows: repeat(2, 1fr); gap: 2px; background-color: var(--c-red); width: 100%; height: 70vh; margin-top: 20px;}
         .sb-cell { background-color: black; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 20px; }
         .sb-number { font-size: 5rem; font-weight: 900; margin: 0; }
@@ -106,7 +106,7 @@
     </div>
 
     <div id="screen-extrainfo" class="screen data-screen" style="align-items: center; justify-content: center; padding: 0;">
-        <img id="chart-img" src="charts/chart_1.svg" alt="Extra Info Chart" onerror="this.style.display='none'" style="max-width: 90vw; max-height: 90vh;">
+        <img id="chart-img" src="charts/chart_1.png" alt="Extra Info Chart" onerror="this.style.display='none'" style="max-width: 90vw; max-height: 90vh;">
     </div>
 
     <script>
@@ -142,11 +142,108 @@
         const clienteSupabase = window.supabase.createClient(supabaseUrl, supabaseKey);
         const channel = clienteSupabase.channel("simon-sync").subscribe();
 
+        // LISTA DE LOS 100 DATOS ÍNTEGROS
         const facts = [
             "Avondale Middle School recorded a 68% reduction in physical fighting after removing phones.",
+            "Michigan pilot districts saw a 51% decrease in phone violations following the ban.",
             "Removing phones is equivalent to adding 5 extra days of learning to the school year.",
+            "Norwegian middle schools experienced a significant decline in bullying incidents after phone restrictions.",
+            "Regional smartphone bans in Spain led to a 15-18% reduction in school bullying.",
             "Michigan high school students receive an average of 100 notifications daily.",
-            "It can take a student 20 minutes to refocus on learning after checking a single message."
+            "It can take a student 20 minutes to refocus on learning after checking a single message.",
+            "A single smartphone notification disrupts concentration for roughly 7 seconds.",
+            "Seventy percent of principals reported a positive impact on school climate after banning phones.",
+            "Sixty-seven percent of school leaders cited a reduction in inappropriate phone use inside buildings.",
+            "Fifty-four percent of principals observed a drop in cyberbullying from within the school.",
+            "Implementing a ban led to a 30% spike in suspensions for Black students during the adjustment year.",
+            "Florida test scores improved by 1.1 percentiles in the second year of a statewide ban.",
+            "Male students in Florida saw a 1.4 percentile gain in test scores after the ban.",
+            "Prohibiting phones in the UK was linked to a 6.4% increase in national exam scores.",
+            "Grades in phone-free college classrooms rose by 0.07 standard deviations.",
+            "Low-achieving students in college saw double the average grade uplift in phone-free rooms.",
+            "Removing phones is equivalent to providing one hour of additional instruction per week.",
+            "Seventy-five percent of Dutch educators reported that bans improved student concentration.",
+            "Fifty-nine percent of teachers in the Netherlands noted a better learning environment post-ban.",
+            "In Norway, middle school phone bans significantly improved the GPA of girls.",
+            "Eighty-one percent of teachers agreed that a ban improves student academic performance.",
+            "Students without smartphones performed significantly better on attention and processing speed tests.",
+            "Higher test scores were found specifically in Spanish regions that adopted phone bans.",
+            "Ninety-seven percent of teens report using their smartphones during school hours.",
+            "Half of students receive more than 237 notifications on a typical day.",
+            "One in three students will migrate their digital distractions to laptops if phones are banned.",
+            "Physical distance from a phone is required to fully escape its cognitive pull.",
+            "Using a phone for socialization motives is strongly associated with academic decline.",
+            "Self-reported study quality is significantly higher when students are not using smartphones.",
+            "Seventy-two percent of high school teachers call phones a major barrier to teaching.",
+            "One hundred percent of teachers in a Marietta academy agreed bans improved classroom management.",
+            "Eighty-eight percent of youth support classroom bans specifically to reduce distractions.",
+            "Only one in ten students supports a \"bell-to-bell\" all-day phone policy.",
+            "Sixty-eight percent of U.S. adults support banning phone use during class time.",
+            "Seventy-four percent of parents support prohibiting phones during instructional time.",
+            "In Maryland, 88% of principals reported reduced distractions after strict policies were set.",
+            "Three out of four teachers in elementary schools reported having a bell-to-bell ban.",
+            "Forty-six percent of students believe they should learn to use phones responsibly rather than ban them.",
+            "Eighty-one percent of youth believe parents should be able to reach them during school.",
+            "By 2026, 58% of all monitored nations had implemented national school phone policies.",
+            "Policy adoption for phone bans increased by 150% between 2023 and 2026.",
+            "As of 2026, 44 U.S. states have taken formal action to address school smartphone use.",
+            "Michigan ranks 44th in the nation for education proficiency.",
+            "Over 50% of Michigan 3rd-grade students fail to meet reading proficiency levels.",
+            "Thirty-one U.S. states required districts to limit or ban phones by October 2025.",
+            "Twenty-two states have enacted \"bell-to-bell\" bans for the entire school day.",
+            "Sixteen countries are currently in active discussions to introduce national phone bans.",
+            "The UNESCO GEM report found that one-quarter of countries had phone laws in place by 2023.",
+            "New York's budget allocated $13.5 million to help schools purchase phone storage solutions.",
+            "Moderate physical activity among Danish students increased significantly after a recess phone ban.",
+            "The frequency of physical activity during recess rose by 37% (odds ratio 1.37) post-ban.",
+            "Attendance at after-school sporting events jumped 50% at KIPP NYC after the ban.",
+            "Nearly 1 in 6 Michigan teens report suffering from clinical anxiety or depression.",
+            "Seventy-two percent of school leaders believe phones have a negative impact on mental health.",
+            "Students who spend over three hours on social media are twice as likely to be depressed.",
+            "Eighty-one percent of students noticed a negative change in their study habits after getting a phone.",
+            "Sleep deprivation is experienced by 48.7% of students who use phones excessively.",
+            "A Gamma value of -0.09 confirms that excessive entertainment use on phones harms grades.",
+            "Sixty-six percent of students identified social media notifications as their biggest study distraction.",
+            "A magnetic pouch system costs an average of $25 to $30 per student.",
+            "Nearly half of schools currently use a \"no-show\" policy where phones stay in pockets.",
+            "Centralized storage in lockers or pouches is linked to more focused classrooms than pocket storage.",
+            "Florida unexcused absences dropped significantly, accounting for half of the test score gains.",
+            "Eighty-three percent of NEA members support prohibiting personal device use for the entire day.",
+            "Ninety-five percent of college students bring their smartphones to every class.",
+            "Eighty-six percent of students believe smartphones facilitate the acquisition of learning materials.",
+            "One in three students in statistics programs used phones more than 6 hours a day.",
+            "Students using phones in lectures took fewer and less detailed notes.",
+            "One hundred million dollars was allocated in Pennsylvania to help schools purchase phone pouches.",
+            "75% of adults globally now support some form of a school cellphone ban.",
+            "60% of teachers say students now use smartwatches to text and play games during class.",
+            "94% of adults in advanced economies now own a smartphone.",
+            "50% of teachers believe smartwatches have replaced phones as the primary classroom distraction.",
+            "In Florida, suspensions for Black students rose by 30% during the first year of the ban.",
+            "Male students in Florida saw a large increase in disciplinary incidents while females saw none.",
+            "77% of public schools currently prohibit student phone use during any class.",
+            "86% of elementary schools have phone policies compared to just 55% of high schools.",
+            "30% of schools prohibit phone use both during class and during free periods.",
+            "53% of school leaders report negative impacts of phone use on academic performance.",
+            "73% of school leaders say phones have damaged students' attention spans.",
+            "Students with honours results above 3.70 typically spend only 1-2 hours on social media.",
+            "85.7% of participants in a cross-sectional study showed a high level of daily phone use.",
+            "66.4% of high-usage students exhibited low academic performance in recent testing.",
+            "43% of students report using their phones 1-10 times during every class period.",
+            "28.3% of nursing students report using their phones more than 30 times per session.",
+            "Average screen time for people aged 15-24 in the U.S. is approximately 7 hours daily.",
+            "Text messaging and short-form videos act as bridge nodes connecting screen time to lower grades.",
+            "97.6% of medical students in a Mexican cohort reported owning a smartphone.",
+            "First-year students notch the biggest improvements when phones are removed from the classroom.",
+            "Batching notifications three times a day significantly reduces stress and negative affect.",
+            "Never receiving notifications increased anxiety levels by a Cohen’s d of 0.56.",
+            "Average attention span dropped from 12 seconds in 2000 to just 8 seconds in recent years.",
+            "Sixty-three percent of college students spend 2-4 hours per day on short-form videos.",
+            "43.3% of students screened positive for ADHD-like symptoms in high-screen-time groups.",
+            "Course comprehension was significantly higher for students whose phones were physically removed.",
+            "Eighty-one percent of teachers agree that bans improve overall student behavior.",
+            "Danish schools observed that vigorous physical activity decreased during recess phone bans.",
+            "76% of U.S. schools banned non-academic phone use during the 2021-22 school year.",
+            "The \"brain drain\" effect returns the moment a phone re-enters the environment."
         ];
         
         let activePlayer = null; 
@@ -197,7 +294,8 @@
                 } else if (action === "SCOREBOARD_REQ") {
                     renderScoreboard();
                 } else if (action === "EXTRA_INFO_REQ") {
-                    document.getElementById('chart-img').src = `charts/chart_${Math.floor(Math.random()*3)+1}.svg`;
+                    // Ahora llama del 1 al 10 y espera formato PNG
+                    document.getElementById('chart-img').src = `charts/chart_${Math.floor(Math.random()*10)+1}.png`;
                     showScreen('screen-extrainfo');
                 } else if (action === "EXIT") {
                     resetTVToIdle();
@@ -214,7 +312,6 @@
             }
         });
 
-        // NUEVO: Función que carga nombres reales desde Supabase y los centra
         async function renderScoreboard() {
             const { data } = await clienteSupabase.from('scores').select('*').order('score', { ascending: false }).limit(10);
             const grid = document.getElementById('scoreboard-container');
@@ -289,6 +386,7 @@
             const factBox = document.getElementById("fact-container");
             const timerText = document.getElementById("tv-timer");
             
+            // EL COLOR DE LA CAJA SE ADAPTA AL ÚLTIMO COLOR USADO
             factBox.style.backgroundColor = lastColorHex;
             document.getElementById("fact-text").innerText = facts[Math.floor(Math.random() * facts.length)];
             
@@ -365,12 +463,9 @@
 
             showScreen('screen-gameover');
 
-            // NUEVO: Calcular la posición dinámica basada en la base de datos
             (async () => {
-                // Guarda la puntuación actual
                 await clienteSupabase.from('scores').insert([{ nickname: activePlayer.name, score: finalScore }]);
                 
-                // Cuenta cuántos usuarios tienen mejor puntuación
                 const { count, error } = await clienteSupabase.from('scores')
                     .select('*', { count: 'exact', head: true })
                     .gt('score', finalScore);
