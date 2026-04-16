@@ -6,90 +6,187 @@
     <title>Mobile - Brain Drain</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        :root { --c-green: #1ad872; --c-red: #f9432d; --c-yellow: #efd828; --c-blue: #27a4e4; }
-        body, html { margin: 0; padding: 0; height: 100%; width: 100%; font-family: "Helvetica Neue", Arial, sans-serif; background-color: #1a1a1a; color: white; overflow: hidden; }
+        :root { 
+            --c-green: #1ad872; 
+            --c-red: #f9432d; 
+            --c-yellow: #efd828; 
+            --c-blue: #27a4e4; 
+        }
+        body, html { margin: 0; padding: 0; height: 100%; width: 100%; font-family: "Helvetica Neue", Arial, sans-serif; overflow: hidden; background-color: #1a1a1a; color: white; -webkit-touch-callout: none; -webkit-user-select: none; }
+        
         .screen { display: none; height: 100vh; width: 100vw; justify-content: center; align-items: center; flex-direction: column; text-align: center; padding: 20px; box-sizing: border-box; }
         .active { display: flex; }
-        .dynamic-btn { display: flex; align-items: center; background: var(--c-green); padding: 10px 30px; border-radius: 50px; width: 80%; margin-top: 30px; }
-        .dynamic-btn input { background: transparent; border: none; color: black; font-size: 1.5rem; font-weight: bold; width: 100%; outline: none; }
-        .menu-btn { background: white; color: black; border: none; padding: 20px; font-size: 1.5rem; font-weight: bold; border-radius: 30px; margin-top: 15px; width: 80%; text-transform: uppercase; }
+
+        .dynamic-btn { display: flex; align-items: center; justify-content: space-between; background: var(--c-green); padding: 10px 10px 10px 30px; border-radius: 50px; width: 80%; transition: background-color 0.5s; margin-top: 30px; }
+        .dynamic-btn input { background: transparent; border: none; color: black; font-size: 1.5rem; font-weight: bold; width: 70%; outline: none; }
+        .dynamic-btn input::placeholder { color: rgba(0,0,0,0.5); }
+        .circle-btn { background: white; color: black; border: none; width: 50px; height: 50px; border-radius: 50%; font-size: 1.5rem; display: flex; justify-content: center; align-items: center; cursor: pointer; font-weight: bold; }
+        
+        /* Botones SCOREBOARD y menús */
+        .menu-btn { background: white; color: black; border: none; padding: 20px; font-size: 1.5rem; font-weight: bold; border-radius: 30px; margin-top: 15px; width: 80%; cursor: pointer; text-transform: uppercase; }
+        .menu-btn.green { background: var(--c-green); color: black; }
+        .menu-btn.blue { background: var(--c-blue); color: white; }
+        .menu-btn.yellow { background: var(--c-yellow); color: black; }
+
+        .arrow-up { font-size: 5rem; animation: bounceUp 1.5s ease-in-out infinite; margin-bottom: 20px; color: white; }
+        @keyframes bounceUp { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-20px); } }
+
         #game-grid { display: none; height: 100vh; width: 100vw; flex-wrap: wrap; }
-        .color-btn { width: 50%; height: 50vh; border: none; }
+        .color-btn { width: 50%; height: 50vh; border: none; position: relative; outline: none; transition: opacity 0.1s; }
+        .color-btn:active { opacity: 0.5; }
+        #btn-green { background-color: var(--c-green); order: 1; }
+        #btn-red { background-color: var(--c-red); order: 2; }
+        #btn-yellow { background-color: var(--c-yellow); order: 3; }
+        #btn-blue { background-color: var(--c-blue); order: 4; }
     </style>
 </head>
 <body>
 
     <div id="screen-login" class="screen active" style="background: black;">
         <div class="dynamic-btn" id="nick-container">
-            <input type="text" id="nickname-input" placeholder="NICKNAME" maxlength="12" />
-            <button onclick="joinGame()" style="background: white; border-radius: 50%; border: none; width: 40px; height: 40px; font-weight: bold;">→</button>
+            <input type="text" id="nickname-input" placeholder="Nickname" maxlength="12" />
+            <button class="circle-btn" onclick="joinGame()">→</button>
         </div>
+        <p id="status-msg" style="color: #aaa; margin-top: 20px;">Waiting for server...</p>
+    </div>
+
+    <div id="screen-queue" class="screen" style="background: black;">
+        <h2 style="color: var(--c-yellow); font-size: 3rem; margin-bottom: 10px;">WAITING LIST</h2>
+        <p style="font-size: 1.5rem; margin-bottom: 40px; padding: 0 20px;">Another player is currently testing their attention.</p>
+        <h1 id="queue-position" style="font-size: 4rem; color: white;">You are #1</h1>
+        <button class="menu-btn red" style="background: var(--c-red); color: white; margin-top: 40px;" onclick="exitGame()">LEAVE QUEUE</button>
     </div>
 
     <div id="screen-start" class="screen" style="background: black;">
-        <h2 id="player-name-display">PLAYER</h2>
-        <button class="menu-btn" style="background: transparent; color: white; border: 3px solid white;" onclick="startGame()">START</button>
+        <h2 id="player-name-display" style="font-size: 2.5rem; color: white;">Player name</h2>
+        <button class="menu-btn" style="background: transparent; color: white; border: 3px solid white; margin-top: 50px;" onclick="startGame()">START</button>
+    </div>
+
+    <div id="screen-block" class="screen" style="background-color: #000; z-index: 200">
+        <div class="arrow-up">↑</div>
+        <h1 id="block-title" style="color: var(--c-red); font-size: 4rem; margin: 0; line-height: 1;">MEMORIZE!</h1>
+        <p id="block-desc" style="font-size: 1.5rem; color: white; margin-top: 10px;">Remember the path</p>
     </div>
 
     <div id="game-grid">
-        <button class="color-btn" style="background: var(--c-green)" onclick="sendTap('#1ad872')"></button>
-        <button class="color-btn" style="background: var(--c-red)" onclick="sendTap('#f9432d')"></button>
-        <button class="color-btn" style="background: var(--c-yellow)" onclick="sendTap('#efd828')"></button>
-        <button class="color-btn" style="background: var(--c-blue)" onclick="sendTap('#27a4e4')"></button>
+        <button class="color-btn" id="btn-green" onclick="sendTap('#1ad872')"></button>
+        <button class="color-btn" id="btn-red" onclick="sendTap('#f9432d')"></button>
+        <button class="color-btn" id="btn-yellow" onclick="sendTap('#efd828')"></button>
+        <button class="color-btn" id="btn-blue" onclick="sendTap('#27a4e4')"></button>
     </div>
 
-    <div id="screen-gameover" class="screen" style="background: black;">
-        <h1 style="color: var(--c-red); font-size: 4rem;">YOU LOSE</h1>
-        <button class="menu-btn" style="background: var(--c-green)" onclick="startGame()">TRY AGAIN</button>
-        <button class="menu-btn" onclick="requestScoreboard()">SCOREBOARD</button>
-        <button class="menu-btn" style="background: var(--c-yellow)" onclick="exitGame()">EXIT</button>
+    <div id="screen-gameover" class="screen" style="background: black; justify-content: flex-start; padding-top: 20%;">
+        <h1 style="color: var(--c-red); font-size: 5rem; margin-bottom: 40px; line-height: 1; margin-top: 0;">YOU<br>LOSE</h1>
+        <button class="menu-btn green" onclick="requestMenu('EXTRA_INFO_REQ')">EXTRA INFO</button>
+        <button class="menu-btn blue" onclick="startGame()">TRY AGAIN</button>
+        <button class="menu-btn" style="background: white;" onclick="requestMenu('SCOREBOARD_REQ')">SCOREBOARD</button>
+        <button class="menu-btn yellow" style="margin-top: 40px;" onclick="exitGame()">EXIT</button>
     </div>
 
-    <div id="screen-rank" class="screen" style="background: black;">
-        <h2 style="color: var(--c-red); font-size: 3rem;">YOU ARE</h2>
-        <h1 id="rank-display" style="color: var(--c-red); font-size: 5rem;">#--</h1>
-        <button class="menu-btn" onclick="startGame()">TRY AGAIN</button>
-        <button class="menu-btn" style="background: var(--c-yellow)" onclick="exitGame()">EXIT</button>
+    <div id="screen-rank" class="screen" style="background: black; justify-content: flex-start; padding-top: 20%;">
+        <h2 style="color: var(--c-red); font-size: 4rem; margin-bottom: 0;">YOU'RE</h2>
+        <h2 style="color: var(--c-red); font-size: 4rem; margin-top: 0; margin-bottom: 40px;">THE #8</h2>
+        <button class="menu-btn green" onclick="requestMenu('EXTRA_INFO_REQ')">EXTRA INFO</button>
+        <button class="menu-btn blue" onclick="startGame()">TRY AGAIN</button>
+        <button class="menu-btn yellow" style="margin-top: 40px;" onclick="exitGame()">EXIT</button>
     </div>
 
     <script>
-        const myId = Math.random().toString(36).substring(7);
+        // GENERAR UN ID ÚNICO PARA ESTE MÓVIL
+        const myId = Math.random().toString(36).substring(2, 10);
+
+        const colors = ['#1ad872', '#f9432d', '#efd828', '#27a4e4'];
+        let colorIdx = 0;
+        setInterval(() => {
+            if(document.getElementById('screen-login').classList.contains('active')) {
+                colorIdx = (colorIdx + 1) % colors.length;
+                document.getElementById('nick-container').style.backgroundColor = colors[colorIdx];
+            }
+        }, 2000);
+
         const supabaseUrl = "https://hpmmzyfxchqlazxkbrym.supabase.co";
         const supabaseKey = "sb_publishable_z7XELKJhbVvNwnB1iIJq9g_7-CvO-rb";
         const clienteSupabase = window.supabase.createClient(supabaseUrl, supabaseKey);
         const channel = clienteSupabase.channel("simon-sync");
 
         function showScreen(id) {
-            document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
-            document.getElementById("game-grid").style.display = (id === "game-grid") ? "flex" : "none";
-            if (id !== "game-grid") document.getElementById(id).classList.add("active");
+            document.querySelectorAll(".screen").forEach((s) => s.classList.remove("active"));
+            document.getElementById("game-grid").style.display = "none";
+
+            if (id === "game-grid") {
+                document.getElementById(id).style.display = "flex";
+            } else {
+                document.getElementById(id).classList.add("active");
+            }
         }
 
         function joinGame() {
-            const name = document.getElementById("nickname-input").value.trim() || "ANON";
-            document.getElementById("player-name-display").innerText = name.toUpperCase();
+            const name = document.getElementById("nickname-input").value.trim() || "Player";
+            document.getElementById("player-name-display").innerText = name;
+            
+            // Mandamos el JOIN con nuestro ID secreto
             channel.send({ type: "broadcast", event: "mobile-action", payload: { action: "JOIN", value: name, id: myId } });
-            showScreen("screen-start");
         }
 
-        function startGame() { channel.send({ type: "broadcast", event: "mobile-action", payload: { action: "START", id: myId } }); }
-        function requestScoreboard() { channel.send({ type: "broadcast", event: "mobile-action", payload: { action: "SCOREBOARD_REQ", id: myId } }); showScreen("screen-rank"); }
-        function exitGame() { channel.send({ type: "broadcast", event: "mobile-action", payload: { action: "EXIT", id: myId } }); location.reload(); }
-
-        let lastTap = 0;
-        function sendTap(color) {
-            const now = Date.now();
-            if (now - lastTap < 500) return; // BLOQUEO 0.5s
-            lastTap = now;
-            channel.send({ type: "broadcast", event: "mobile-action", payload: { action: "TAP", value: color, id: myId } });
+        function startGame() {
+            channel.send({ type: "broadcast", event: "mobile-action", payload: { action: "START", id: myId } });
         }
 
-        channel.on("broadcast", { event: "tv-state" }, (data) => {
-            const { state, rank } = data.payload;
-            if (state === "PLAY") showScreen("game-grid");
-            else if (state === "GAMEOVER") { document.getElementById("rank-display").innerText = "#" + rank; showScreen("screen-gameover"); }
-            else if (state === "WATCH" || state === "BLOCKED") { /* Solo mirar tele */ }
-        }).subscribe();
+        function requestMenu(actionType) {
+            channel.send({ type: "broadcast", event: "mobile-action", payload: { action: actionType, id: myId } });
+            if(actionType === 'SCOREBOARD_REQ') showScreen("screen-rank");
+        }
+
+        let ultimoToque = 0;
+        function sendTap(hex) {
+            const ahora = Date.now();
+            if (ahora - ultimoToque < 500) return;
+            ultimoToque = ahora;
+
+            channel.send({ type: "broadcast", event: "mobile-action", payload: { action: "TAP", value: hex, id: myId } });
+        }
+
+        function exitGame() {
+            channel.send({ type: "broadcast", event: "mobile-action", payload: { action: "EXIT", id: myId } });
+            location.reload(); // El móvil sí se recarga para borrar el Nickname del usuario anterior
+        }
+
+        // ESCUCHAR A LA TV
+        channel
+            .on("broadcast", { event: "tv-state" }, (data) => {
+                const state = data.payload.state;
+                const targetId = data.payload.targetId;
+
+                // SISTEMA DE COLAS: Ignorar los mensajes de la TV si van dirigidos a otro teléfono
+                if (targetId && targetId !== myId) return;
+
+                if (state === "PLAYER_ACCEPTED") {
+                    showScreen("screen-start");
+                } else if (state === "PLAYER_QUEUED") {
+                    document.getElementById("queue-position").innerText = "You are #" + data.payload.position;
+                    showScreen("screen-queue");
+                } else if (state === "QUEUE_UPDATE") {
+                    document.getElementById("queue-position").innerText = "You are #" + data.payload.position;
+                } else if (state === "BLOCKED") {
+                    document.getElementById("block-title").innerText = "LOOK AT\nTHE TV";
+                    document.getElementById("block-desc").innerText = "Read the fact";
+                    showScreen("screen-block");
+                } else if (state === "WATCH") {
+                    document.getElementById("block-title").innerText = "MEMORIZE!";
+                    document.getElementById("block-desc").innerText = "Remember the path";
+                    showScreen("screen-block");
+                } else if (state === "PLAY") {
+                    showScreen("game-grid");
+                } else if (state === "GAMEOVER") {
+                    showScreen("screen-gameover");
+                }
+            })
+            .subscribe((status) => {
+                if (status === "SUBSCRIBED") {
+                    document.getElementById("status-msg").innerText = "Connected!";
+                    document.getElementById("status-msg").style.color = "var(--c-green)";
+                }
+            });
     </script>
 </body>
 </html>
