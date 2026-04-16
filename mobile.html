@@ -22,7 +22,6 @@
         .dynamic-btn input::placeholder { color: rgba(0,0,0,0.5); }
         .circle-btn { background: white; color: black; border: none; width: 50px; height: 50px; border-radius: 50%; font-size: 1.5rem; display: flex; justify-content: center; align-items: center; cursor: pointer; font-weight: bold; }
         
-        /* Botones SCOREBOARD y menús */
         .menu-btn { background: white; color: black; border: none; padding: 20px; font-size: 1.5rem; font-weight: bold; border-radius: 30px; margin-top: 15px; width: 80%; cursor: pointer; text-transform: uppercase; }
         .menu-btn.green { background: var(--c-green); color: black; }
         .menu-btn.blue { background: var(--c-blue); color: white; }
@@ -85,15 +84,15 @@
 
     <div id="screen-rank" class="screen" style="background: black; justify-content: flex-start; padding-top: 20%;">
         <h2 style="color: var(--c-red); font-size: 4rem; margin-bottom: 0;">YOU'RE</h2>
-        <h2 style="color: var(--c-red); font-size: 4rem; margin-top: 0; margin-bottom: 40px;">THE #8</h2>
+        <h2 id="dynamic-rank" style="color: var(--c-red); font-size: 4rem; margin-top: 0; margin-bottom: 40px;">THE #--</h2>
         <button class="menu-btn green" onclick="requestMenu('EXTRA_INFO_REQ')">EXTRA INFO</button>
         <button class="menu-btn blue" onclick="startGame()">TRY AGAIN</button>
         <button class="menu-btn yellow" style="margin-top: 40px;" onclick="exitGame()">EXIT</button>
     </div>
 
     <script>
-        // GENERAR UN ID ÚNICO PARA ESTE MÓVIL
         const myId = Math.random().toString(36).substring(2, 10);
+        let myRank = '--'; // Se actualizará al perder
 
         const colors = ['#1ad872', '#f9432d', '#efd828', '#27a4e4'];
         let colorIdx = 0;
@@ -124,7 +123,6 @@
             const name = document.getElementById("nickname-input").value.trim() || "Player";
             document.getElementById("player-name-display").innerText = name;
             
-            // Mandamos el JOIN con nuestro ID secreto
             channel.send({ type: "broadcast", event: "mobile-action", payload: { action: "JOIN", value: name, id: myId } });
         }
 
@@ -134,7 +132,12 @@
 
         function requestMenu(actionType) {
             channel.send({ type: "broadcast", event: "mobile-action", payload: { action: actionType, id: myId } });
-            if(actionType === 'SCOREBOARD_REQ') showScreen("screen-rank");
+            
+            // NUEVO: Inyectar el ranking antes de enseñar la pantalla
+            if(actionType === 'SCOREBOARD_REQ') {
+                document.getElementById('dynamic-rank').innerText = "THE #" + myRank;
+                showScreen("screen-rank");
+            }
         }
 
         let ultimoToque = 0;
@@ -148,19 +151,17 @@
 
         function exitGame() {
             channel.send({ type: "broadcast", event: "mobile-action", payload: { action: "EXIT", id: myId } });
-            location.reload(); // El móvil sí se recarga para borrar el Nickname del usuario anterior
+            location.reload(); 
         }
 
-        // ESCUCHAR A LA TV
         channel
             .on("broadcast", { event: "tv-state" }, (data) => {
                 const state = data.payload.state;
                 const targetId = data.payload.targetId;
 
-                // SISTEMA DE COLAS: Ignorar los mensajes de la TV si van dirigidos a otro teléfono
                 if (targetId && targetId !== myId) return;
 
-                if (state === "PLAYER_ACCEPTED") {
+                if (state === "ACCEPTED") {
                     showScreen("screen-start");
                 } else if (state === "PLAYER_QUEUED") {
                     document.getElementById("queue-position").innerText = "You are #" + data.payload.position;
@@ -178,6 +179,8 @@
                 } else if (state === "PLAY") {
                     showScreen("game-grid");
                 } else if (state === "GAMEOVER") {
+                    // Guarda el rango devuelto por la base de datos
+                    myRank = data.payload.rank || '--';
                     showScreen("screen-gameover");
                 }
             })
