@@ -6,13 +6,17 @@
     <title>Mobile - Brain Drain</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        :root { --c-green: #1ad872; --c-red: #f9432d; --c-yellow: #efd828; --c-blue: #27a4e4; }
+        :root { 
+            --c-green: #1ad872; 
+            --c-red: #f9432d; 
+            --c-yellow: #efd828; 
+            --c-blue: #27a4e4; 
+        }
         body, html { margin: 0; padding: 0; height: 100%; width: 100%; font-family: "Helvetica Neue", Arial, sans-serif; overflow: hidden; background-color: #1a1a1a; color: white; -webkit-touch-callout: none; -webkit-user-select: none; position: relative; }
         
         .screen { display: none; height: 100vh; width: 100vw; position: absolute; top: 0; left: 0; }
         .active { display: block; }
 
-        /* HERRAMIENTAS DE POSICIÓN LIBRE */
         .pos-center { position: absolute; transform: translate(-50%, -50%); margin: 0; text-align: center; }
         
         .dynamic-btn { display: flex; align-items: center; justify-content: space-between; background: var(--c-green); padding: 10px 10px 10px 30px; border-radius: 50px; width: 80%; box-sizing: border-box; transition: background-color 0.5s; }
@@ -45,13 +49,6 @@
             <button class="circle-btn" onclick="joinGame()">→</button>
         </div>
         <p id="status-msg" class="pos-center" style="color: #aaa; top: 55%; left: 50%; white-space: nowrap;">Waiting for server...</p>
-    </div>
-
-    <div id="screen-queue" class="screen" style="background: black;">
-        <h2 class="pos-center" style="color: var(--c-yellow); font-size: 3rem; top: 20%; left: 50%; white-space: nowrap;">WAITING LIST</h2>
-        <p class="pos-center" style="font-size: 1.5rem; top: 40%; left: 50%; width: 90%;">Another player is currently testing their attention.</p>
-        <h1 id="queue-position" class="pos-center" style="font-size: 4rem; color: white; top: 60%; left: 50%; white-space: nowrap;">You are #1</h1>
-        <button class="menu-btn red pos-center" style="background: var(--c-red); color: white; top: 80%; left: 50%;" onclick="exitGame()">LEAVE QUEUE</button>
     </div>
 
     <div id="screen-start" class="screen" style="background: black;">
@@ -158,15 +155,11 @@
         channel.on("broadcast", { event: "tv-state" }, (data) => {
             const state = data.payload.state;
             const targetId = data.payload.targetId;
+            
             if (targetId && targetId !== myId) return;
 
             if (state === "ACCEPTED") {
                 showScreen("screen-start");
-            } else if (state === "PLAYER_QUEUED") {
-                document.getElementById("queue-position").innerText = "You are #" + data.payload.position;
-                showScreen("screen-queue");
-            } else if (state === "QUEUE_UPDATE") {
-                document.getElementById("queue-position").innerText = "You are #" + data.payload.position;
             } else if (state === "BLOCKED") {
                 document.getElementById("block-title").innerText = "LOOK AT\nTHE TV";
                 document.getElementById("block-desc").innerText = "Read the fact";
