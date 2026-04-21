@@ -259,7 +259,6 @@
             const sndStart = document.getElementById("snd-start");
             const sndFact = document.getElementById("snd-fact");
 
-            // Variables de limpieza (Evitan el solapamiento que provocaba perder instantáneamente)
             let nextRoundTimeout = null;
             let playInterval = null;
             let factTimer = null;
@@ -270,7 +269,6 @@
                 clearInterval(playInterval);
                 clearInterval(factTimer);
                 clearTimeout(highlightTimeout);
-                // Limpia cualquier luz que se haya quedado encendida por error
                 document.querySelectorAll(".simon-color").forEach(el => el.classList.remove("highlight"));
             }
 
@@ -446,13 +444,11 @@
                 const value = data.payload.value;
                 const senderId = data.payload.id;
 
-                // CUALQUIERA QUE SE UNA, REEMPLAZA AL JUGADOR ACTUAL (No hay cola de espera)
                 if (action === "JOIN") {
                     activePlayer = { id: senderId, name: value };
                     sndBg.pause();
                     document.getElementById("tv-player-name").innerText = value.toUpperCase();
                     
-                    // Matamos cualquier proceso fantasma del jugador anterior
                     clearAllTimeouts();
                     isPlaying = false;
 
@@ -520,7 +516,7 @@
             }
 
             function startGame() {
-                clearAllTimeouts(); // Destruimos solapamientos antes de empezar
+                clearAllTimeouts();
                 showScreen("screen-game");
                 sequence = [];
                 level = 0;
