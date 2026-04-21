@@ -6,29 +6,27 @@
     <title>Mobile - Brain Drain</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        :root { 
-            --c-green: #1ad872; 
-            --c-red: #f9432d; 
-            --c-yellow: #efd828; 
-            --c-blue: #27a4e4; 
-        }
-        body, html { margin: 0; padding: 0; height: 100%; width: 100%; font-family: "Helvetica Neue", Arial, sans-serif; overflow: hidden; background-color: #1a1a1a; color: white; -webkit-touch-callout: none; -webkit-user-select: none; }
+        :root { --c-green: #1ad872; --c-red: #f9432d; --c-yellow: #efd828; --c-blue: #27a4e4; }
+        body, html { margin: 0; padding: 0; height: 100%; width: 100%; font-family: "Helvetica Neue", Arial, sans-serif; overflow: hidden; background-color: #1a1a1a; color: white; -webkit-touch-callout: none; -webkit-user-select: none; position: relative; }
         
-        .screen { display: none; height: 100vh; width: 100vw; justify-content: center; align-items: center; flex-direction: column; text-align: center; padding: 20px; box-sizing: border-box; }
-        .active { display: flex; }
+        .screen { display: none; height: 100vh; width: 100vw; position: absolute; top: 0; left: 0; }
+        .active { display: block; }
 
-        .dynamic-btn { display: flex; align-items: center; justify-content: space-between; background: var(--c-green); padding: 10px 10px 10px 30px; border-radius: 50px; width: 80%; transition: background-color 0.5s; margin-top: 30px; }
+        /* HERRAMIENTAS DE POSICIÓN LIBRE */
+        .pos-center { position: absolute; transform: translate(-50%, -50%); margin: 0; text-align: center; }
+        
+        .dynamic-btn { display: flex; align-items: center; justify-content: space-between; background: var(--c-green); padding: 10px 10px 10px 30px; border-radius: 50px; width: 80%; box-sizing: border-box; transition: background-color 0.5s; }
         .dynamic-btn input { background: transparent; border: none; color: black; font-size: 1.5rem; font-weight: bold; width: 70%; outline: none; }
         .dynamic-btn input::placeholder { color: rgba(0,0,0,0.5); }
         .circle-btn { background: white; color: black; border: none; width: 50px; height: 50px; border-radius: 50%; font-size: 1.5rem; display: flex; justify-content: center; align-items: center; cursor: pointer; font-weight: bold; }
         
-        .menu-btn { background: white; color: black; border: none; padding: 20px; font-size: 1.5rem; font-weight: bold; border-radius: 30px; margin-top: 15px; width: 80%; cursor: pointer; text-transform: uppercase; }
+        .menu-btn { background: white; color: black; border: none; padding: 20px; font-size: 1.5rem; font-weight: bold; border-radius: 30px; width: 80%; cursor: pointer; text-transform: uppercase; white-space: nowrap; }
         .menu-btn.green { background: var(--c-green); color: black; }
         .menu-btn.blue { background: var(--c-blue); color: white; }
         .menu-btn.yellow { background: var(--c-yellow); color: black; }
 
-        .arrow-up { font-size: 5rem; animation: bounceUp 1.5s ease-in-out infinite; margin-bottom: 20px; color: white; }
-        @keyframes bounceUp { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-20px); } }
+        .arrow-up { font-size: 5rem; animation: bounceUp 1.5s ease-in-out infinite; color: white; }
+        @keyframes bounceUp { 0%, 100% { transform: translate(-50%, 0); } 50% { transform: translate(-50%, -20px); } }
 
         #game-grid { display: none; height: 100vh; width: 100vw; flex-wrap: wrap; }
         .color-btn { width: 50%; height: 50vh; border: none; position: relative; outline: none; transition: opacity 0.1s; }
@@ -42,29 +40,29 @@
 <body>
 
     <div id="screen-login" class="screen active" style="background: black;">
-        <div class="dynamic-btn" id="nick-container">
+        <div class="dynamic-btn pos-center" id="nick-container" style="top: 40%; left: 50%;">
             <input type="text" id="nickname-input" placeholder="Nickname" maxlength="12" />
             <button class="circle-btn" onclick="joinGame()">→</button>
         </div>
-        <p id="status-msg" style="color: #aaa; margin-top: 20px;">Waiting for server...</p>
+        <p id="status-msg" class="pos-center" style="color: #aaa; top: 55%; left: 50%; white-space: nowrap;">Waiting for server...</p>
     </div>
 
     <div id="screen-queue" class="screen" style="background: black;">
-        <h2 style="color: var(--c-yellow); font-size: 3rem; margin-bottom: 10px;">WAITING LIST</h2>
-        <p style="font-size: 1.5rem; margin-bottom: 40px; padding: 0 20px;">Another player is currently testing their attention.</p>
-        <h1 id="queue-position" style="font-size: 4rem; color: white;">You are #1</h1>
-        <button class="menu-btn red" style="background: var(--c-red); color: white; margin-top: 40px;" onclick="exitGame()">LEAVE QUEUE</button>
+        <h2 class="pos-center" style="color: var(--c-yellow); font-size: 3rem; top: 20%; left: 50%; white-space: nowrap;">WAITING LIST</h2>
+        <p class="pos-center" style="font-size: 1.5rem; top: 40%; left: 50%; width: 90%;">Another player is currently testing their attention.</p>
+        <h1 id="queue-position" class="pos-center" style="font-size: 4rem; color: white; top: 60%; left: 50%; white-space: nowrap;">You are #1</h1>
+        <button class="menu-btn red pos-center" style="background: var(--c-red); color: white; top: 80%; left: 50%;" onclick="exitGame()">LEAVE QUEUE</button>
     </div>
 
     <div id="screen-start" class="screen" style="background: black;">
-        <h2 id="player-name-display" style="font-size: 2.5rem; color: white;">Player name</h2>
-        <button class="menu-btn" style="background: transparent; color: white; border: 3px solid white; margin-top: 50px;" onclick="startGame()">START</button>
+        <h2 id="player-name-display" class="pos-center" style="font-size: 2.5rem; color: white; top: 35%; left: 50%; white-space: nowrap;">Player name</h2>
+        <button class="menu-btn pos-center" style="background: transparent; color: white; border: 3px solid white; top: 65%; left: 50%;" onclick="startGame()">START</button>
     </div>
 
     <div id="screen-block" class="screen" style="background-color: #000; z-index: 200">
-        <div class="arrow-up">↑</div>
-        <h1 id="block-title" style="color: var(--c-red); font-size: 4rem; margin: 0; line-height: 1;">MEMORIZE!</h1>
-        <p id="block-desc" style="font-size: 1.5rem; color: white; margin-top: 10px;">Remember the path</p>
+        <div class="arrow-up pos-center" style="top: 30%; left: 50%;">↑</div>
+        <h1 id="block-title" class="pos-center" style="color: var(--c-red); font-size: 4rem; line-height: 1; top: 55%; left: 50%; white-space: nowrap;">MEMORIZE!</h1>
+        <p id="block-desc" class="pos-center" style="font-size: 1.5rem; color: white; top: 68%; left: 50%; white-space: nowrap;">Remember the path</p>
     </div>
 
     <div id="game-grid">
@@ -74,21 +72,23 @@
         <button class="color-btn" id="btn-blue" onclick="sendTap('#27a4e4')"></button>
     </div>
 
-    <div id="screen-gameover" class="screen" style="background: black; justify-content: flex-start; padding-top: 20%;">
-        <h1 style="color: var(--c-red); font-size: 5rem; margin-bottom: 40px; line-height: 1; margin-top: 0;">YOU<br>LOSE</h1>
-        <button class="menu-btn blue" onclick="startGame()">TRY AGAIN</button>
-        <button class="menu-btn" style="background: white;" onclick="requestMenu('SCOREBOARD_REQ')">SCOREBOARD</button>
-        <button class="menu-btn green" onclick="requestMenu('EXTRA_INFO_REQ')">LEARN MORE</button>
-        <button class="menu-btn yellow" style="margin-top: 40px;" onclick="exitGame()">EXIT</button>
+    <div id="screen-gameover" class="screen" style="background: black;">
+        <h1 class="pos-center" style="color: var(--c-red); font-size: 5rem; line-height: 1; top: 15%; left: 50%;">YOU<br>LOSE</h1>
+        <button class="menu-btn blue pos-center" style="top: 40%; left: 50%;" onclick="startGame()">TRY AGAIN</button>
+        <button class="menu-btn pos-center" style="background: white; top: 55%; left: 50%;" onclick="requestMenu('SCOREBOARD_REQ')">SCOREBOARD</button>
+        <button class="menu-btn green pos-center" style="top: 70%; left: 50%;" onclick="requestMenu('EXTRA_INFO_REQ')">LEARN MORE</button>
+        <button class="menu-btn yellow pos-center" style="top: 85%; left: 50%;" onclick="exitGame()">EXIT</button>
     </div>
 
-    <div id="screen-rank" class="screen" style="background: black; justify-content: flex-start; padding-top: 20%;">
-        <h2 style="color: var(--c-red); font-size: 4rem; margin-bottom: 0;">YOU'RE</h2>
-        <h2 id="dynamic-rank" style="color: var(--c-red); font-size: 4rem; margin-top: 0; margin-bottom: 40px;">THE #--</h2>
-        <button class="menu-btn blue" onclick="startGame()">TRY AGAIN</button>
-        <button class="menu-btn" style="background: white;" onclick="requestMenu('SCOREBOARD_REQ')">SCOREBOARD</button>
-        <button class="menu-btn green" onclick="requestMenu('EXTRA_INFO_REQ')">LEARN MORE</button>
-        <button class="menu-btn yellow" style="margin-top: 40px;" onclick="exitGame()">EXIT</button>
+    <div id="screen-rank" class="screen" style="background: black;">
+        <div class="pos-center" style="top: 15%; left: 50%; white-space: nowrap;">
+            <h2 style="color: var(--c-red); font-size: 4rem; margin: 0;">YOU'RE</h2>
+            <h2 id="dynamic-rank" style="color: var(--c-red); font-size: 4rem; margin: 0;">THE #--</h2>
+        </div>
+        <button class="menu-btn blue pos-center" style="top: 40%; left: 50%;" onclick="startGame()">TRY AGAIN</button>
+        <button class="menu-btn pos-center" style="background: white; top: 55%; left: 50%;" onclick="requestMenu('SCOREBOARD_REQ')">SCOREBOARD</button>
+        <button class="menu-btn green pos-center" style="top: 70%; left: 50%;" onclick="requestMenu('EXTRA_INFO_REQ')">LEARN MORE</button>
+        <button class="menu-btn yellow pos-center" style="top: 85%; left: 50%;" onclick="exitGame()">EXIT</button>
     </div>
 
     <script>
@@ -117,7 +117,6 @@
         function showScreen(id) {
             document.querySelectorAll(".screen").forEach((s) => s.classList.remove("active"));
             document.getElementById("game-grid").style.display = "none";
-
             if (id === "game-grid") {
                 document.getElementById(id).style.display = "flex";
             } else {
@@ -128,7 +127,6 @@
         function joinGame() {
             const name = document.getElementById("nickname-input").value.trim() || "Player";
             document.getElementById("player-name-display").innerText = name;
-            
             channel.send({ type: "broadcast", event: "mobile-action", payload: { action: "JOIN", value: name, id: myId } });
         }
 
@@ -138,7 +136,6 @@
 
         function requestMenu(actionType) {
             channel.send({ type: "broadcast", event: "mobile-action", payload: { action: actionType, id: myId } });
-            
             if(actionType === 'SCOREBOARD_REQ') {
                 document.getElementById('dynamic-rank').innerText = "THE #" + myRank;
                 showScreen("screen-rank");
@@ -150,7 +147,6 @@
             const ahora = Date.now();
             if (ahora - ultimoToque < 500) return;
             ultimoToque = ahora;
-
             channel.send({ type: "broadcast", event: "mobile-action", payload: { action: "TAP", value: hex, id: myId } });
         }
 
@@ -159,41 +155,38 @@
             location.reload(); 
         }
 
-        channel
-            .on("broadcast", { event: "tv-state" }, (data) => {
-                const state = data.payload.state;
-                const targetId = data.payload.targetId;
+        channel.on("broadcast", { event: "tv-state" }, (data) => {
+            const state = data.payload.state;
+            const targetId = data.payload.targetId;
+            if (targetId && targetId !== myId) return;
 
-                if (targetId && targetId !== myId) return;
-
-                if (state === "ACCEPTED") {
-                    showScreen("screen-start");
-                } else if (state === "PLAYER_QUEUED") {
-                    document.getElementById("queue-position").innerText = "You are #" + data.payload.position;
-                    showScreen("screen-queue");
-                } else if (state === "QUEUE_UPDATE") {
-                    document.getElementById("queue-position").innerText = "You are #" + data.payload.position;
-                } else if (state === "BLOCKED") {
-                    document.getElementById("block-title").innerText = "LOOK AT\nTHE TV";
-                    document.getElementById("block-desc").innerText = "Read the fact";
-                    showScreen("screen-block");
-                } else if (state === "WATCH") {
-                    document.getElementById("block-title").innerText = "MEMORIZE!";
-                    document.getElementById("block-desc").innerText = "Remember the path";
-                    showScreen("screen-block");
-                } else if (state === "PLAY") {
-                    showScreen("game-grid");
-                } else if (state === "GAMEOVER") {
-                    myRank = data.payload.rank || '--';
-                    showScreen("screen-gameover");
-                }
-            })
-            .subscribe((status) => {
-                if (status === "SUBSCRIBED") {
-                    document.getElementById("status-msg").innerText = "Connected!";
-                    document.getElementById("status-msg").style.color = "var(--c-green)";
-                }
-            });
+            if (state === "ACCEPTED") {
+                showScreen("screen-start");
+            } else if (state === "PLAYER_QUEUED") {
+                document.getElementById("queue-position").innerText = "You are #" + data.payload.position;
+                showScreen("screen-queue");
+            } else if (state === "QUEUE_UPDATE") {
+                document.getElementById("queue-position").innerText = "You are #" + data.payload.position;
+            } else if (state === "BLOCKED") {
+                document.getElementById("block-title").innerText = "LOOK AT\nTHE TV";
+                document.getElementById("block-desc").innerText = "Read the fact";
+                showScreen("screen-block");
+            } else if (state === "WATCH") {
+                document.getElementById("block-title").innerText = "MEMORIZE!";
+                document.getElementById("block-desc").innerText = "Remember the path";
+                showScreen("screen-block");
+            } else if (state === "PLAY") {
+                showScreen("game-grid");
+            } else if (state === "GAMEOVER") {
+                myRank = data.payload.rank || '--';
+                showScreen("screen-gameover");
+            }
+        }).subscribe((status) => {
+            if (status === "SUBSCRIBED") {
+                document.getElementById("status-msg").innerText = "Connected!";
+                document.getElementById("status-msg").style.color = "var(--c-green)";
+            }
+        });
     </script>
 </body>
 </html>
