@@ -68,13 +68,8 @@
                 animation: bounce 1.5s ease-in-out infinite;
             }
             @keyframes bounce {
-                0%,
-                100% {
-                    transform: translate(-50%, 0);
-                }
-                50% {
-                    transform: translate(-50%, 30px);
-                }
+                0%, 100% { transform: translate(-50%, 0); }
+                50% { transform: translate(-50%, 30px); }
             }
 
             #simon-board {
@@ -130,8 +125,15 @@
                 font-weight: bold;
                 margin-bottom: 40px;
             }
-            #tv-timer-container { display: flex; justify-content: flex-end; }
-            #tv-timer { font-size: 2.5rem; font-weight: 900; color: black; }
+            #tv-timer-container {
+                display: flex;
+                justify-content: flex-end;
+            }
+            #tv-timer {
+                font-size: 2.5rem;
+                font-weight: 900;
+                color: black;
+            }
 
             .data-row {
                 font-size: 2.5rem;
@@ -165,8 +167,16 @@
                 text-align: center;
                 padding: 20px;
             }
-            .sb-number { font-size: 5rem; font-weight: 900; margin: 0; }
-            .sb-name { font-size: 1.5rem; color: white; margin-top: 10px; }
+            .sb-number {
+                font-size: 5rem;
+                font-weight: 900;
+                margin: 0;
+            }
+            .sb-name {
+                font-size: 1.5rem;
+                color: white;
+                margin-top: 10px;
+            }
 
             #audio-overlay {
                 position: fixed;
@@ -222,15 +232,11 @@
         </div>
 
         <div id="screen-gameover" class="screen" style="background: black">
-            <h1
-                class="title-text pos-left"
-                style="color: var(--c-red); font-size: 12rem; top: 20%; left: 10%; text-align: left">
+            <h1 class="title-text pos-left" style="color: var(--c-red); font-size: 12rem; top: 20%; left: 10%; text-align: left">
                 YOU LOSE
             </h1>
 
-            <div
-                class="pos-left"
-                style="top: 60%; left: 10%; display: grid; grid-template-columns: auto auto; column-gap: 15vw; row-gap: 30px;">
+            <div class="pos-left" style="top: 60%; left: 10%; display: grid; grid-template-columns: auto auto; column-gap: 15vw; row-gap: 30px;">
                 <div class="data-row" style="margin: 0">
                     ATTENTION TIME<br /><span id="res-time">0:00 minutes</span>
                 </div>
@@ -251,12 +257,7 @@
         </div>
 
         <div id="screen-extrainfo" class="screen" style="background: black">
-            <img
-                id="chart-img"
-                class="pos-center"
-                style="top: 50%; left: 50%; max-width: 90vw; max-height: 90vh"
-                src="charts/chart_1.png"
-                onerror="this.style.display='none'" />
+            <img id="chart-img" class="pos-center" style="top: 50%; left: 50%; max-width: 90vw; max-height: 90vh" src="charts/chart_1.png" onerror="this.style.display='none'" />
         </div>
 
         <script>
@@ -265,24 +266,25 @@
             const sndStart = document.getElementById("snd-start");
             const sndFact = document.getElementById("snd-fact");
 
-            // EL MOTOR DE DESBLOQUEO DE AUDIO DEFINITIVO
             function initExperience() {
                 document.getElementById("audio-overlay").style.display = "none";
                 
-                // Reproducimos y pausamos todos los efectos en silencio rápido 
-                // para que el navegador los apruebe para el resto del día
-                const soundsToUnlock = [sndColor, sndStart, sndFact];
-                soundsToUnlock.forEach(snd => {
-                    snd.volume = 0; 
-                    snd.play().then(() => {
-                        snd.pause();
-                        snd.currentTime = 0;
-                        snd.volume = 1;
-                    }).catch(e => {});
+                // DESBLOQUEO POR FUERZA BRUTA: Obligamos al navegador a aceptar todos los audios
+                const sfx = [sndColor, sndStart, sndFact];
+                sfx.forEach(audio => {
+                    audio.muted = true; // Los silenciamos para que el navegador no moleste al usuario
+                    const playPromise = audio.play();
+                    if (playPromise !== undefined) {
+                        playPromise.then(() => {
+                            audio.pause();
+                            audio.currentTime = 0;
+                            audio.muted = false; // Los volvemos a activar para cuando juegues
+                        }).catch(e => console.log("Error desbloqueando audio:", e));
+                    }
                 });
 
-                // Reproducimos la música de fondo normalmente
-                sndBg.play().catch((e) => console.log("Audio play falló", e));
+                // Reproducimos la música de fondo (esta sí se escucha)
+                sndBg.play().catch((e) => console.log("Error en música de fondo", e));
                 showScreen("screen-idle");
             }
 
@@ -460,16 +462,16 @@
                     }
                 } else if (activePlayer && senderId === activePlayer.id) {
                     if (action === "START" || action === "TRY_AGAIN") {
+                        // AQUÍ HACEMOS QUE SUENE EL AUDIO (Sin catch vacío para depurar errores)
                         sndStart.currentTime = 0;
-                        sndStart.play().catch((e) => {});
+                        sndStart.play().catch((e) => console.log("Error en sonido Start:", e));
                         startGame();
                     } else if (action === "TAP" && isPlaying) {
                         checkPlayerInput(value);
                     } else if (action === "SCOREBOARD_REQ") {
                         renderScoreboard();
                     } else if (action === "EXTRA_INFO_REQ") {
-                        document.getElementById("chart-img").src =
-                            `charts/chart_${Math.floor(Math.random() * 10) + 1}.png`;
+                        document.getElementById("chart-img").src = `charts/chart_${Math.floor(Math.random() * 10) + 1}.png`;
                         showScreen("screen-extrainfo");
                     } else if (action === "EXIT") {
                         resetTVToIdle();
@@ -540,7 +542,7 @@
                     activePlayer = null;
                     showScreen("screen-idle");
                     sndBg.currentTime = 0;
-                    sndBg.play().catch((e) => {});
+                    sndBg.play().catch((e) => console.log(e));
                 }
             }
 
@@ -580,8 +582,9 @@
                 document.getElementById("simon-board").style.display = "none";
                 factBox.style.display = "block";
 
+                // AQUÍ HACEMOS QUE SUENE EL DATO
                 sndFact.currentTime = 0;
-                sndFact.play().catch((e) => {});
+                sndFact.play().catch((e) => console.log("Error en sonido Fact:", e));
                 channel.send({
                     type: "broadcast",
                     event: "tv-state",
@@ -630,8 +633,11 @@
 
             function highlightColor(hex) {
                 const el = document.getElementById(colorIds[hex]);
+                
+                // AQUÍ HACEMOS QUE SUENEN LOS COLORES
                 sndColor.currentTime = 0;
-                sndColor.play().catch((e) => {});
+                sndColor.play().catch((e) => console.log("Error en sonido Color:", e));
+                
                 el.classList.add("highlight");
                 setTimeout(() => el.classList.remove("highlight"), 300);
             }
