@@ -76,22 +76,22 @@
 
     <div id="screen-gameover" class="screen" style="background: black; justify-content: flex-start; padding-top: 20%;">
         <h1 style="color: var(--c-red); font-size: 5rem; margin-bottom: 40px; line-height: 1; margin-top: 0;">YOU<br>LOSE</h1>
-        <button class="menu-btn green" onclick="requestMenu('EXTRA_INFO_REQ')">EXTRA INFO</button>
         <button class="menu-btn blue" onclick="startGame()">TRY AGAIN</button>
         <button class="menu-btn" style="background: white;" onclick="requestMenu('SCOREBOARD_REQ')">SCOREBOARD</button>
+        <button class="menu-btn green" onclick="requestMenu('EXTRA_INFO_REQ')">LEARN MORE</button>
         <button class="menu-btn yellow" style="margin-top: 40px;" onclick="exitGame()">EXIT</button>
     </div>
 
     <div id="screen-rank" class="screen" style="background: black; justify-content: flex-start; padding-top: 20%;">
         <h2 style="color: var(--c-red); font-size: 4rem; margin-bottom: 0;">YOU'RE</h2>
         <h2 id="dynamic-rank" style="color: var(--c-red); font-size: 4rem; margin-top: 0; margin-bottom: 40px;">THE #--</h2>
-        <button class="menu-btn green" onclick="requestMenu('EXTRA_INFO_REQ')">EXTRA INFO</button>
         <button class="menu-btn blue" onclick="startGame()">TRY AGAIN</button>
+        <button class="menu-btn" style="background: white;" onclick="requestMenu('SCOREBOARD_REQ')">SCOREBOARD</button>
+        <button class="menu-btn green" onclick="requestMenu('EXTRA_INFO_REQ')">LEARN MORE</button>
         <button class="menu-btn yellow" style="margin-top: 40px;" onclick="exitGame()">EXIT</button>
     </div>
 
     <script>
-        // RECUPERA EL ID DEL DISPOSITIVO O CREA UNO NUEVO PERMANENTE
         let myId = localStorage.getItem('brain_drain_device_id');
         if (!myId) {
             myId = Math.random().toString(36).substring(2, 10);

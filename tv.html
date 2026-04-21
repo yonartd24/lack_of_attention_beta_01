@@ -37,7 +37,8 @@
         #fact-container { padding: 60px; border-radius: 30px; max-width: 80%; z-index: 50; display: none; color: black; text-align: left; transition: background-color 0.3s ease; }
         #fact-text { font-size: 3.5rem; line-height: 1.2; font-weight: bold; margin-bottom: 40px; }
         #tv-timer-container { display: flex; justify-content: flex-end; }
-        #tv-timer { font-size: 4rem; font-weight: 900; background: white; border-radius: 20px; border: 4px solid black; padding: 10px 40px; }
+        /* Temporizador modificado: más pequeño y sin fondo */
+        #tv-timer { font-size: 2.5rem; font-weight: 900; color: black; }
         
         .data-screen { background: black; color: white; width: 100%; height: 100%; align-items: flex-start; padding-left: 10%; }
         .data-row { font-size: 2.5rem; margin: 20px 0; font-weight: bold; text-align: left; }
@@ -63,7 +64,7 @@
     </div>
 
     <div id="screen-idle" class="screen">
-        <h1 class="title-text">ATTENTION TEST</h1>
+        <h1 class="title-text">TEST YOUR ATTENTION SPAN</h1>
         <p class="subtitle-text">SCAN TO START</p>
         <div class="bouncing-arrow">↓</div>
     </div>
@@ -455,7 +456,6 @@
             showScreen('screen-gameover');
 
             (async () => {
-                // SISTEMA ANTI-SPAM (Busca el nickname, si la puntuación es más alta, la actualiza. Si no, no guarda)
                 const { data: existingRecords } = await clienteSupabase.from('scores')
                     .select('*')
                     .ilike('nickname', activePlayer.name);
