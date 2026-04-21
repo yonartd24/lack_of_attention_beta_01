@@ -120,12 +120,18 @@
         function joinGame() {
             const name = document.getElementById("nickname-input").value.trim() || "Player";
             document.getElementById("player-name-display").innerText = name;
+            
+            // Reemplazo visual instantáneo para evitar re-clicks en el nickname
+            document.getElementById("block-title").innerText = "WAITING...";
+            document.getElementById("block-desc").innerText = "Connecting to TV";
+            showScreen("screen-block");
+
             channel.send({ type: "broadcast", event: "mobile-action", payload: { action: "JOIN", value: name, id: myId } });
         }
 
-        // === SOLUCIÓN DE GHOST CLICKS APLICADA AQUÍ ===
         function startGame() {
-            // Mostramos feedback visual inmediato para bloquear la pantalla y evitar múltiples clics
+            // Esto oculta los botones de Iniciar/Reintentar INMEDIATAMENTE
+            // De esta forma es físicamente imposible pulsar nada por error
             document.getElementById("block-title").innerText = "GET READY!";
             document.getElementById("block-desc").innerText = "Look at the TV";
             showScreen("screen-block");

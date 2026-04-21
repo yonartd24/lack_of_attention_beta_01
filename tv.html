@@ -272,20 +272,17 @@
                 document.querySelectorAll(".simon-color").forEach(el => el.classList.remove("highlight"));
             }
 
+            // NUEVO SISTEMA DE AUDIO INFALIBLE
             function initExperience() {
                 document.getElementById("audio-overlay").style.display = "none";
                 
                 const sfx = [sndColor, sndStart, sndFact];
                 sfx.forEach(audio => {
-                    audio.muted = true;
-                    const playPromise = audio.play();
-                    if (playPromise !== undefined) {
-                        playPromise.then(() => {
-                            audio.pause();
-                            audio.currentTime = 0;
-                            audio.muted = false;
-                        }).catch(e => console.log("Error desbloqueando audio:", e));
-                    }
+                    audio.load();
+                    audio.play().then(() => {
+                        audio.pause();
+                        audio.currentTime = 0;
+                    }).catch(e => console.log("Unlock error", e));
                 });
 
                 sndBg.play().catch((e) => console.log("Error en música de fondo", e));
@@ -309,7 +306,7 @@
             const supabaseUrl = "https://hpmmzyfxchqlazxkbrym.supabase.co";
             const supabaseKey = "sb_publishable_z7XELKJhbVvNwnB1iIJq9g_7-CvO-rb";
             const clienteSupabase = window.supabase.createClient(supabaseUrl, supabaseKey);
-            const channel = clienteSupabase.channel("simon-sync").subscribe();
+            const channel = clienteSupabase.channel("simon-sync");
 
             const facts = [
                 "Avondale Middle School recorded a 68% reduction in physical fighting after removing phones.",
@@ -453,11 +450,8 @@
                     isPlaying = false;
 
                     showScreen("screen-ready");
-                    channel.send({
-                        type: "broadcast",
-                        event: "tv-state",
-                        payload: { state: "ACCEPTED", targetId: senderId }
-                    });
+                    channel.send({ type: "broadcast", event: "tv-state", payload: { state: "ACCEPTED", targetId: senderId } });
+                    
                 } else if (activePlayer && senderId === activePlayer.id) {
                     if (action === "START" || action === "TRY_AGAIN") {
                         sndStart.currentTime = 0;
@@ -468,14 +462,13 @@
                     } else if (action === "SCOREBOARD_REQ") {
                         renderScoreboard();
                     } else if (action === "EXTRA_INFO_REQ") {
-                        document.getElementById("chart-img").src =
-                            `charts/chart_${Math.floor(Math.random() * 10) + 1}.png`;
+                        document.getElementById("chart-img").src = `charts/chart_${Math.floor(Math.random() * 10) + 1}.png`;
                         showScreen("screen-extrainfo");
                     } else if (action === "EXIT") {
                         resetTVToIdle();
                     }
                 }
-            });
+            }).subscribe();
 
             async function renderScoreboard() {
                 const { data } = await clienteSupabase
@@ -557,11 +550,7 @@
 
                 sndFact.currentTime = 0;
                 sndFact.play().catch((e) => console.log("Error en sonido Fact:", e));
-                channel.send({
-                    type: "broadcast",
-                    event: "tv-state",
-                    payload: { state: "BLOCKED", targetId: activePlayer.id }
-                });
+                channel.send({ type: "broadcast", event: "tv-state", payload: { state: "BLOCKED", targetId: activePlayer.id } });
 
                 let timeLeft = 5;
                 timerText.innerText = timeLeft;
@@ -579,11 +568,7 @@
 
             function playSequence() {
                 clearAllTimeouts();
-                channel.send({
-                    type: "broadcast",
-                    event: "tv-state",
-                    payload: { state: "WATCH", targetId: activePlayer.id }
-                });
+                channel.send({ type: "broadcast", event: "tv-state", payload: { state: "WATCH", targetId: activePlayer.id } });
                 let i = 0;
                 playInterval = setInterval(() => {
                     highlightColor(sequence[i]);
@@ -594,11 +579,7 @@
                             isPlaying = true;
                             document.getElementById("center-counter").innerText = sequence.length;
                             document.getElementById("center-counter").style.display = "block";
-                            channel.send({
-                                type: "broadcast",
-                                event: "tv-state",
-                                payload: { state: "PLAY", targetId: activePlayer.id }
-                            });
+                            channel.send({ type: "broadcast", event: "tv-state", payload: { state: "PLAY", targetId: activePlayer.id } });
                         }, 500);
                     }
                 }, 800);
@@ -615,8 +596,16 @@
             }
 
             function checkPlayerInput(colorTapped) {
+                // ESCUDO DE CLICS FANTASMA: Si no está activo o si se pasa de límite, lo ignora completamente
+                if (!isPlaying || playerStep >= sequence.length) return; 
+
                 highlightColor(colorTapped);
-                if (colorTapped === sequence[playerStep]) {
+                
+                // Normalizamos las strings para que sea imposible un fallo por mayúsculas/espacios
+                const tapVal = colorTapped.trim().toLowerCase();
+                const seqVal = sequence[playerStep].trim().toLowerCase();
+
+                if (tapVal === seqVal) {
                     playerStep++;
                     document.getElementById("center-counter").innerText = sequence.length - playerStep;
                     if (playerStep === sequence.length) {
@@ -668,11 +657,7 @@
                         .select("*", { count: "exact", head: true })
                         .gt("score", finalScore);
                     const rank = error ? "--" : (count || 0) + 1;
-                    channel.send({
-                        type: "broadcast",
-                        event: "tv-state",
-                        payload: { state: "GAMEOVER", targetId: activePlayer.id, rank: rank }
-                    });
+                    channel.send({ type: "broadcast", event: "tv-state", payload: { state: "GAMEOVER", targetId: activePlayer.id, rank: rank } });
                 })();
             }
         </script>
