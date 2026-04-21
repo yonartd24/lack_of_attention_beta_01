@@ -36,7 +36,6 @@
                 display: block;
             }
 
-            /* HERRAMIENTAS DE POSICIÓN LIBRE */
             .pos-center {
                 position: absolute;
                 transform: translate(-50%, -50%);
@@ -95,38 +94,14 @@
                 transform: scale(1.02);
             }
 
-            #tv-green {
-                background-color: var(--c-green);
-            }
-            #tv-green.highlight {
-                box-shadow:
-                    0 0 60px var(--c-green),
-                    inset 0 0 30px white;
-            }
-            #tv-red {
-                background-color: var(--c-red);
-            }
-            #tv-red.highlight {
-                box-shadow:
-                    0 0 60px var(--c-red),
-                    inset 0 0 30px white;
-            }
-            #tv-yellow {
-                background-color: var(--c-yellow);
-            }
-            #tv-yellow.highlight {
-                box-shadow:
-                    0 0 60px var(--c-yellow),
-                    inset 0 0 30px white;
-            }
-            #tv-blue {
-                background-color: var(--c-blue);
-            }
-            #tv-blue.highlight {
-                box-shadow:
-                    0 0 60px var(--c-blue),
-                    inset 0 0 30px white;
-            }
+            #tv-green { background-color: var(--c-green); }
+            #tv-green.highlight { box-shadow: 0 0 60px var(--c-green), inset 0 0 30px white; }
+            #tv-red { background-color: var(--c-red); }
+            #tv-red.highlight { box-shadow: 0 0 60px var(--c-red), inset 0 0 30px white; }
+            #tv-yellow { background-color: var(--c-yellow); }
+            #tv-yellow.highlight { box-shadow: 0 0 60px var(--c-yellow), inset 0 0 30px white; }
+            #tv-blue { background-color: var(--c-blue); }
+            #tv-blue.highlight { box-shadow: 0 0 60px var(--c-blue), inset 0 0 30px white; }
 
             #center-counter {
                 font-size: 6rem;
@@ -155,15 +130,8 @@
                 font-weight: bold;
                 margin-bottom: 40px;
             }
-            #tv-timer-container {
-                display: flex;
-                justify-content: flex-end;
-            }
-            #tv-timer {
-                font-size: 2.5rem;
-                font-weight: 900;
-                color: black;
-            }
+            #tv-timer-container { display: flex; justify-content: flex-end; }
+            #tv-timer { font-size: 2.5rem; font-weight: 900; color: black; }
 
             .data-row {
                 font-size: 2.5rem;
@@ -197,16 +165,8 @@
                 text-align: center;
                 padding: 20px;
             }
-            .sb-number {
-                font-size: 5rem;
-                font-weight: 900;
-                margin: 0;
-            }
-            .sb-name {
-                font-size: 1.5rem;
-                color: white;
-                margin-top: 10px;
-            }
+            .sb-number { font-size: 5rem; font-weight: 900; margin: 0; }
+            .sb-name { font-size: 1.5rem; color: white; margin-top: 10px; }
 
             #audio-overlay {
                 position: fixed;
@@ -270,14 +230,7 @@
 
             <div
                 class="pos-left"
-                style="
-                    top: 60%;
-                    left: 10%;
-                    display: grid;
-                    grid-template-columns: auto auto;
-                    column-gap: 15vw;
-                    row-gap: 30px;
-                ">
+                style="top: 60%; left: 10%; display: grid; grid-template-columns: auto auto; column-gap: 15vw; row-gap: 30px;">
                 <div class="data-row" style="margin: 0">
                     ATTENTION TIME<br /><span id="res-time">0:00 minutes</span>
                 </div>
@@ -312,8 +265,23 @@
             const sndStart = document.getElementById("snd-start");
             const sndFact = document.getElementById("snd-fact");
 
+            // EL MOTOR DE DESBLOQUEO DE AUDIO DEFINITIVO
             function initExperience() {
                 document.getElementById("audio-overlay").style.display = "none";
+                
+                // Reproducimos y pausamos todos los efectos en silencio rápido 
+                // para que el navegador los apruebe para el resto del día
+                const soundsToUnlock = [sndColor, sndStart, sndFact];
+                soundsToUnlock.forEach(snd => {
+                    snd.volume = 0; 
+                    snd.play().then(() => {
+                        snd.pause();
+                        snd.currentTime = 0;
+                        snd.volume = 1;
+                    }).catch(e => {});
+                });
+
+                // Reproducimos la música de fondo normalmente
                 sndBg.play().catch((e) => console.log("Audio play falló", e));
                 showScreen("screen-idle");
             }
